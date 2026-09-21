@@ -36,6 +36,11 @@ function requireAdmin(request) {
   return admin;
 }
 
+function mockRequestNotification(request, decision) {
+  const outcome = decision === "approve" ? "approved" : "declined";
+  console.log(`[mock email] To: ${request.email} | Subject: Bench adoption request ${outcome} | Bench: ${request.benchId} | Request: ${request.id}`);
+}
+
 function sessionCookie(token, maxAge = 60 * 60 * 24 * 7) {
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
   return `bench_session=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`;
@@ -96,7 +101,9 @@ async function api(request, response, url) {
   if (request.method === "PATCH" && reviewMatch) {
     requireAdmin(request);
     const { decision } = JSON.parse(await readBody(request));
+    const requestRecord = getState(db).requests.find((item) => item.id === decodeURIComponent(reviewMatch[1]));
     reviewRequest(db, decodeURIComponent(reviewMatch[1]), decision);
+    if (requestRecord) mockRequestNotification(requestRecord, decision);
     return json(response, 200, { ok: true });
   }
   if (request.method === "POST" && url.pathname === "/api/admin/import") {
