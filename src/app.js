@@ -68,6 +68,7 @@ function renderStats() {
   $("#data-banner").textContent = "Demo dataset — import the park’s inventory from Staff view before production use.";
   $("#source-summary").textContent = `${isDemo ? "Demo data" : "Imported inventory"} · ${state.meta.source_name || "Unknown source"}`;
   $("#demo-credentials").hidden = !isDemo;
+  $("#reset-demo").hidden = !isDemo;
 }
 
 function renderAreaOptions() {

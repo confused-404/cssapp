@@ -43,7 +43,7 @@ The brief is intentionally open-ended, so I made these decisions explicit:
 3. **One active request per bench.** This avoids conflicting promises before payment or staff review. Declining a request releases the bench.
 4. **Terms are 1, 3, or 5 years.** These are placeholders for park policy, isolated in the form/domain logic so they are easy to change.
 5. **No payment.** The prompt excludes payment, so approval represents the handoff to whatever offline process follows.
-6. **Staff access is visible for evaluation.** A real deployment must put it behind authentication and authorization.
+6. **Staff access is visible for evaluation.** A real deployment must put it behind authentication and authorization. Open staff signup is disabled by default; enable `ALLOW_OPEN_SIGNUP=true` only for controlled demos.
 7. **List over map for the MVP.** A searchable list is accessible, testable, and useful even without verified coordinates. A map becomes valuable only after the park supplies accurate GIS data.
 
 ## Structure
@@ -78,7 +78,7 @@ Email: test@gmail.com
 Password: test
 ```
 
-Staff requests and mutation endpoints require an authenticated session. Passwords are salted and hashed with Node's `scrypt`; the browser receives only an HTTP-only, same-site session cookie. Open signup is included because the prompt requested a simple signup flow. A production deployment should replace it with invitation-only account creation or an organization identity provider.
+Staff requests and mutation endpoints require an authenticated session. Passwords are salted and hashed with Node's `scrypt`; the browser receives only an HTTP-only, same-site session cookie. Open signup is disabled by default; a controlled demo can set `ALLOW_OPEN_SIGNUP=true`. A production deployment should replace it with invitation-only account creation or an organization identity provider.
 
 To load live inventory, open **Staff view → Import real bench data**, download the template, and upload a completed CSV. Importing atomically replaces the directory, clears requests tied to the previous inventory, and records the source filename and timestamp. From that point forward, the public directory, new adoption requests, and staff decisions all read and write `data/benches.db` through the API.
 

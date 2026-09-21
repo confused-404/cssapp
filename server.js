@@ -124,6 +124,7 @@ async function api(request, response, url) {
   }
   if (request.method === "POST" && url.pathname === "/api/admin/reset-demo") {
     requireAdmin(request);
+    if (getState(db).meta.data_source === "imported") throw Object.assign(new Error("Demo reset is unavailable while imported inventory is active."), { statusCode: 409 });
     seedDemo(db);
     const state = getState(db);
     return json(response, 200, { ok: true, pendingRequests: state.requests.filter((item) => item.status === "pending").length });
