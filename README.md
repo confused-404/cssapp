@@ -19,7 +19,8 @@ npm test
 ## What works
 
 - Browse all 520 seeded bench records, search by bench/area, filter, and paginate.
-- Switch between a visual card directory and a compact scanning list; the preference is remembered per browser.
+- Switch between photo-forward cards and a compact scanning list; the first gallery photo becomes the card cover, and the preference is remembered per browser.
+- Filter the directory to benches with photos or without photos.
 - See whether a bench is available, adopted, or held for a pending request.
 - See the public donor name, dedication, and adoption end date for adopted benches.
 - View an optional photo gallery for the bench and surrounding area.

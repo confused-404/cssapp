@@ -57,7 +57,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .view-button { min-height: 38px; border: 0; border-right: 1px solid var(--line); padding: .45rem .7rem; background: transparent; color: var(--muted); cursor: pointer; font-size: .8rem; font-weight: 750; }
 .view-button:last-child { border-right: 0; }
 .view-button.active { background: var(--green-800); color: white; }
-.filters { display: grid; grid-template-columns: minmax(230px, 1fr) 210px 170px auto; gap: .7rem; margin-bottom: 2rem; }
+.filters { display: grid; grid-template-columns: minmax(230px, 1fr) 190px 165px 145px auto; gap: .7rem; margin-bottom: 2rem; }
 .filters input, .filters select, .form-field input, .form-field select, .form-field textarea { width: 100%; min-height: 46px; border: 1px solid var(--line); border-radius: 9px; padding: .7rem .8rem; background: var(--paper); color: var(--ink); }
 .search-field { position: relative; }
 .search-field svg { position: absolute; left: .85rem; top: 50%; width: 19px; fill: none; stroke: var(--muted); stroke-linecap: round; stroke-width: 2; transform: translateY(-50%); }
@@ -82,6 +82,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .bench-card[data-status="adopted"] .bench-card-top { background: linear-gradient(145deg, #dfe5ec, #f0f2f5); }
 .bench-card[data-status="pending"] { border-color: #e2bf82; }
 .bench-card[data-status="pending"] .bench-card-top { background: linear-gradient(145deg, #f8e3b9, #fff3dc); }
+.bench-card-top.has-cover { position: relative; min-height: 185px; overflow: hidden; background-position: center; background-size: cover; }
+.bench-card-top.has-cover::after { position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, rgb(10 22 16 / 18%), rgb(10 22 16 / 76%)); content: ""; }
+.bench-card-top.has-cover > * { position: relative; z-index: 1; }
+.bench-card-top.has-cover .bench-number, .bench-card-top.has-cover .bench-id { color: white; text-shadow: 0 1px 3px rgb(0 0 0 / 55%); }
 .bench-number { margin: 0; color: var(--green-950); font-family: Georgia, serif; font-size: 2.4rem; font-weight: 500; line-height: 1; }
 .bench-id { color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .08em; }
 .status { display: inline-flex; align-items: center; gap: .4rem; max-width: 100%; width: max-content; border-radius: 999px; padding: .38rem .68rem; background: var(--green-800); color: white; font-size: .68rem; font-weight: 850; line-height: 1.15; text-transform: none; white-space: normal; }
@@ -97,6 +101,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .bench-grid.list-view { grid-template-columns: 1fr; }
 .bench-grid.list-view .bench-card { display: grid; grid-template-columns: 175px minmax(0, 1fr); min-height: 150px; }
 .bench-grid.list-view .bench-card-top { min-height: 150px; }
+.bench-grid.list-view .bench-card-top.has-cover { background-image: none !important; }
+.bench-grid.list-view .bench-card-top.has-cover::after { display: none; }
+.bench-grid.list-view .bench-card-top.has-cover .bench-number { color: var(--green-950); text-shadow: none; }
+.bench-grid.list-view .bench-card-top.has-cover .bench-id { color: var(--muted); text-shadow: none; }
 .bench-grid.list-view .bench-card-body { display: grid; grid-template-columns: minmax(170px, .8fr) minmax(220px, 1.5fr) auto; align-items: center; column-gap: 1rem; }
 .bench-grid.list-view .bench-feature { margin-bottom: 0; }
 .bench-grid.list-view .dedication { margin: 0; }

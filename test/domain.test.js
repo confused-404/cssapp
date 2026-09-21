@@ -16,6 +16,15 @@ test("filters by query, area, and effective status", () => {
   assert.deepEqual(filterBenches(benches, { search: "2", area: "Parade Ground", status: "pending" }).map((b) => b.id), ["P-002"]);
 });
 
+test("filters benches with and without gallery photos", () => {
+  const benches = [
+    { ...availableBench(), images: [{ id: "IMG-1" }] },
+    { ...availableBench(), id: "P-002", number: 2, images: [] }
+  ];
+  assert.deepEqual(filterBenches(benches, { photos: "with" }).map((bench) => bench.id), ["L-001"]);
+  assert.deepEqual(filterBenches(benches, { photos: "without" }).map((bench) => bench.id), ["P-002"]);
+});
+
 test("adoption validation reports missing and malformed values", () => {
   assert.deepEqual(validateAdoption({ donorName: "", email: "bad", durationMonths: 24, dedication: "x".repeat(161), agreed: false }), {
     donorName: "Enter your name.",

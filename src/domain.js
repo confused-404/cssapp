@@ -6,13 +6,14 @@ export function getEffectiveStatus(bench, today = new Date()) {
   return bench.status;
 }
 
-export function filterBenches(benches, { search = "", area = "all", status = "all" }, today = new Date()) {
+export function filterBenches(benches, { search = "", area = "all", status = "all", photos = "all" }, today = new Date()) {
   const query = search.trim().toLocaleLowerCase();
   return benches.filter((bench) => {
     const haystack = `${bench.id} ${bench.number} ${bench.area} ${bench.feature}`.toLocaleLowerCase();
     return (!query || haystack.includes(query)) &&
       (area === "all" || bench.area === area) &&
-      (status === "all" || getEffectiveStatus(bench, today) === status);
+      (status === "all" || getEffectiveStatus(bench, today) === status) &&
+      (photos === "all" || (photos === "with" ? Boolean(bench.images?.length) : !bench.images?.length));
   });
 }
 

@@ -2,7 +2,7 @@ import { filterBenches, formatDate, getEffectiveStatus, validateAdoption } from 
 
 const PAGE_SIZE = 12;
 let state = { benches: [], requests: [], meta: {} };
-let filters = { search: "", area: "all", status: "all" };
+let filters = { search: "", area: "all", status: "all", photos: "all" };
 let currentPage = 1;
 let viewMode = "card";
 let selectedPhotoBenchId = null;
@@ -85,8 +85,9 @@ function renderBenches() {
     const note = status === "adopted" && bench.adoption
       ? `<p class="dedication">“${escapeHtml(bench.adoption.dedication || `Adopted by ${bench.adoption.publicName}`)}”</p>`
       : status === "pending" ? `<p class="dedication">An adoption request is being reviewed.</p>` : "";
+    const cover = bench.images[0]?.url;
     return `<article class="bench-card" data-status="${status}">
-      <div class="bench-card-top"><div><p class="bench-number">#${bench.number}</p><span class="bench-id">${bench.id}</span></div><span class="status ${status}">${statusLabel(bench)}</span></div>
+      <div class="bench-card-top ${cover ? "has-cover" : ""}" ${cover ? `style="background-image:url('${escapeHtml(cover)}')"` : ""}><div><p class="bench-number">#${bench.number}</p><span class="bench-id">${bench.id}</span></div><span class="status ${status}">${statusLabel(bench)}</span></div>
       <div class="bench-card-body"><div class="bench-summary"><h3>${escapeHtml(bench.area)}</h3><p class="bench-feature">${escapeHtml(bench.feature)}</p>${bench.images.length ? `<span class="photo-count" aria-label="${bench.images.length} photos">▧ ${bench.images.length} photo${bench.images.length === 1 ? "" : "s"}</span>` : ""}</div><div class="list-note">${note}</div><button class="link-button" data-action="details" data-id="${bench.id}">View bench details</button></div>
     </article>`;
   }).join("");
@@ -283,7 +284,7 @@ function switchRoute(route) {
 }
 
 function clearFilters() {
-  filters = { search: "", area: "all", status: "all" };
+  filters = { search: "", area: "all", status: "all", photos: "all" };
   currentPage = 1;
   $("#filters").reset();
   renderBenches();
@@ -318,6 +319,7 @@ async function initialize() {
     if (event.target.id === "search") filters.search = event.target.value;
     if (event.target.id === "area-filter") filters.area = event.target.value;
     if (event.target.id === "status-filter") filters.status = event.target.value;
+    if (event.target.id === "photo-filter") filters.photos = event.target.value;
     currentPage = 1; renderBenches();
   });
   $("#filters").addEventListener("reset", () => window.setTimeout(clearFilters));
