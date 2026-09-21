@@ -1,6 +1,6 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
-import { extname, join, normalize } from "node:path";
+import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { addBenchImage, deleteBenchImage, getBenchImage, getState, importInventory, openDatabase, reviewRequest, seedDemo, submitRequest } from "./src/db.js";
 import { detectImageType, MAX_IMAGE_BYTES } from "./src/images.js";
@@ -9,7 +9,16 @@ import { authenticateAdmin, createAdmin, createAdminSession, deleteAdminSession,
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
 const PORT = Number(process.env.PORT) || 4173;
 const db = openDatabase(process.env.DATABASE_PATH || join(ROOT, "data", "benches.db"));
-const types = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".svg": "image/svg+xml", ".json": "application/json" };
+const ALLOW_OPEN_SIGNUP = process.env.ALLOW_OPEN_SIGNUP === "true";
+const PUBLIC_FILES = new Map([
+  ["/", "index.html"],
+  ["/index.html", "index.html"],
+  ["/styles.css", "styles.css"],
+  ["/src/app.js", "src/app.js"],
+  ["/src/domain.js", "src/domain.js"],
+  ["/assets/stock/van-cortlandt-lake-hero.jpg", "assets/stock/van-cortlandt-lake-hero.jpg"]
+]);
+const types = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".svg": "image/svg+xml", ".json": "application/json", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif" };
 
 function json(response, status, value, headers = {}) {
   response.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...headers });
@@ -47,6 +56,7 @@ async function readBody(request, limit) { return (await readBuffer(request, limi
 
 async function api(request, response, url) {
   if (request.method === "POST" && url.pathname === "/api/auth/signup") {
+    if (!ALLOW_OPEN_SIGNUP) throw Object.assign(new Error("Open staff signup is disabled. Ask an administrator for an account."), { statusCode: 403 });
     const credentials = JSON.parse(await readBody(request));
     const admin = createAdmin(db, credentials);
     const session = createAdminSession(db, admin.id);
@@ -122,10 +132,9 @@ async function api(request, response, url) {
 }
 
 function staticFile(request, response, url) {
-  const pathname = url.pathname === "/" ? "/index.html" : url.pathname;
-  const safePath = normalize(decodeURIComponent(pathname)).replace(/^(\.\.[/\\])+/, "");
-  const file = join(ROOT, safePath);
-  if (!file.startsWith(ROOT) || !existsSync(file) || !statSync(file).isFile()) {
+  const relativePath = PUBLIC_FILES.get(url.pathname);
+  const file = relativePath ? join(ROOT, relativePath) : null;
+  if (!file || !existsSync(file) || !statSync(file).isFile()) {
     response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
     return response.end("Not found");
   }
