@@ -55,12 +55,12 @@
             </label>
             <label>
               <span class="sr-only">Filter by area</span>
-              <select id="area-filter"><option value="all">All park areas</option></select>
+              <select id="area-filter"><option value="all">Area: Any</option></select>
             </label>
             <label>
               <span class="sr-only">Filter by adoption status</span>
               <select id="status-filter">
-                <option value="all">All statuses</option>
+                <option value="all">Status: Any</option>
                 <option value="available">Available</option>
                 <option value="adopted">Adopted</option>
                 <option value="pending">Pending</option>
@@ -150,10 +150,10 @@
           <div class="section-heading"><div><p class="eyebrow">Source of truth</p><h2 id="records-heading">Bench records</h2><p class="section-note">Search the full directory, combine filters, and sort by any operational column.</p></div><p id="records-count" class="result-count" aria-live="polite"></p></div>
           <form id="admin-record-filters" class="admin-record-filters" role="search">
             <label class="search-field admin-search"><span class="sr-only">Search bench records</span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m21 21-4.3-4.3m2.3-5.2a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg><input id="admin-search" type="search" placeholder="Bench, area, donor, or dedication" autocomplete="off" /></label>
-            <label><span class="sr-only">Filter records by area</span><select id="admin-area-filter"><option value="all">All areas</option></select></label>
-            <label><span class="sr-only">Filter records by status</span><select id="admin-status-filter"><option value="all">All statuses</option><option value="available">Available</option><option value="pending">Request pending</option><option value="adopted">Currently adopted</option><option value="expired">Expired adoption</option></select></label>
+            <label><span class="sr-only">Filter records by area</span><select id="admin-area-filter"><option value="all">Area: Any</option></select></label>
+            <label><span class="sr-only">Filter records by status</span><select id="admin-status-filter"><option value="all">Status: Any</option><option value="available">Available</option><option value="pending">Request pending</option><option value="adopted">Currently adopted</option><option value="expired">Expired adoption</option></select></label>
             <label><span class="sr-only">Filter records by photo availability</span><select id="admin-photo-filter"><option value="all">Photos: Any</option><option value="with">Has photos</option><option value="without">No photos</option></select></label>
-            <label><span class="sr-only">Filter records by condition</span><select id="admin-condition-filter"><option value="all">All conditions</option></select></label>
+            <label><span class="sr-only">Filter records by condition</span><select id="admin-condition-filter"><option value="all">Condition: Any</option></select></label>
             <button class="button secondary" type="reset">Clear</button>
           </form>
           <div class="records-toolbar"><label>Rows per page <select id="admin-page-size"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></label><span>Click a column heading to sort.</span></div>

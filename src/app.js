@@ -74,7 +74,7 @@ function renderAreaOptions() {
   const select = $("#area-filter");
   const areas = [...new Set(state.benches.map((bench) => bench.area))].sort((a, b) => a.localeCompare(b));
   if (filters.area !== "all" && !areas.includes(filters.area)) filters.area = "all";
-  select.innerHTML = `<option value="all">All park areas</option>${areas.map((area) => `<option value="${escapeHtml(area)}">${escapeHtml(area)}</option>`).join("")}`;
+  select.innerHTML = `<option value="all">Area: Any</option>${areas.map((area) => `<option value="${escapeHtml(area)}">${escapeHtml(area)}</option>`).join("")}`;
   select.value = filters.area;
 }
 
@@ -243,8 +243,8 @@ function renderAdminFilterOptions() {
   const conditions = [...new Set(state.benches.map((bench) => bench.condition))].sort((a, b) => a.localeCompare(b));
   if (adminFilters.area !== "all" && !areas.includes(adminFilters.area)) adminFilters.area = "all";
   if (adminFilters.condition !== "all" && !conditions.includes(adminFilters.condition)) adminFilters.condition = "all";
-  areaSelect.innerHTML = `<option value="all">All areas</option>${areas.map((area) => `<option value="${escapeHtml(area)}">${escapeHtml(area)}</option>`).join("")}`;
-  conditionSelect.innerHTML = `<option value="all">All conditions</option>${conditions.map((condition) => `<option value="${escapeHtml(condition)}">${escapeHtml(condition)}</option>`).join("")}`;
+  areaSelect.innerHTML = `<option value="all">Area: Any</option>${areas.map((area) => `<option value="${escapeHtml(area)}">${escapeHtml(area)}</option>`).join("")}`;
+  conditionSelect.innerHTML = `<option value="all">Condition: Any</option>${conditions.map((condition) => `<option value="${escapeHtml(condition)}">${escapeHtml(condition)}</option>`).join("")}`;
   areaSelect.value = adminFilters.area;
   conditionSelect.value = adminFilters.condition;
 }
