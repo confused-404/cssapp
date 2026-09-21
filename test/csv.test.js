@@ -14,4 +14,5 @@ test("rejects missing columns, duplicates, and incomplete adoptions", () => {
   assert.throws(() => parseBenchInventory("bench_id,number\nL-1,1"), /area/);
   assert.throws(() => parseBenchInventory("bench_id,number,area\nL-1,1,Lake\nL-1,2,Trail"), /duplicate/);
   assert.throws(() => parseBenchInventory("bench_id,number,area,status\nL-1,1,Lake,adopted"), /require start_date/);
+  assert.throws(() => parseBenchInventory("bench_id,number,area,status,start_date,end_date\nL-1,1,Lake,adopted,2026-02-29,2027-01-01"), /valid YYYY-MM-DD/);
 });

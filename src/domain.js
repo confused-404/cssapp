@@ -1,7 +1,7 @@
 export function getEffectiveStatus(bench, today = new Date()) {
   if (bench.status === "adopted" && bench.adoption?.endDate) {
     const end = new Date(`${bench.adoption.endDate}T23:59:59`);
-    if (end < today) return "available";
+    if (!Number.isNaN(end.getTime()) && end < today) return "available";
   }
   return bench.status;
 }
@@ -20,7 +20,7 @@ export function filterBenches(benches, { search = "", area = "all", status = "al
 export function getAdminStatus(bench, today = new Date()) {
   if (bench.status === "adopted" && bench.adoption?.endDate) {
     const end = new Date(`${bench.adoption.endDate}T23:59:59`);
-    if (end < today) return "expired";
+    if (!Number.isNaN(end.getTime()) && end < today) return "expired";
   }
   return bench.status;
 }
@@ -123,5 +123,7 @@ export function rejectRequest(state, requestId, now = new Date()) {
 
 export function formatDate(value) {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(`${value.slice(0, 10)}T12:00:00Z`));
+  const date = new Date(`${value.slice(0, 10)}T12:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(date);
 }

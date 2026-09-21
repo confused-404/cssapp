@@ -1,6 +1,12 @@
 const REQUIRED_COLUMNS = ["bench_id", "number", "area"];
 const VALID_STATUSES = new Set(["available", "adopted"]);
 
+function isIsoDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 export function parseCsv(text) {
   const rows = [];
   let row = [];
@@ -44,7 +50,7 @@ export function parseBenchInventory(text) {
     if (!record.area) throw new Error(`Row ${line}: area is required.`);
     if (!VALID_STATUSES.has(status)) throw new Error(`Row ${line}: status must be available or adopted.`);
     if (status === "adopted" && (!record.start_date || !record.end_date)) throw new Error(`Row ${line}: adopted benches require start_date and end_date.`);
-    if (status === "adopted" && (![record.start_date, record.end_date].every((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)))) throw new Error(`Row ${line}: dates must use YYYY-MM-DD format.`);
+    if (status === "adopted" && (![record.start_date, record.end_date].every(isIsoDate))) throw new Error(`Row ${line}: dates must use a valid YYYY-MM-DD calendar date.`);
     if (status === "adopted" && record.end_date < record.start_date) throw new Error(`Row ${line}: end_date must be after start_date.`);
     seen.add(record.bench_id);
     seenNumbers.add(number);

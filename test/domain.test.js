@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { approveRequest, createRequest, filterAdminBenches, filterBenches, getAdminStatus, getEffectiveStatus, rejectRequest, sortAdminBenches, validateAdoption } from "../src/domain.js";
+import { approveRequest, createRequest, filterAdminBenches, filterBenches, formatDate, getAdminStatus, getEffectiveStatus, rejectRequest, sortAdminBenches, validateAdoption } from "../src/domain.js";
 
 const availableBench = () => ({ id: "L-001", number: 1, area: "Van Cortlandt Lake", feature: "Lake views", status: "available", adoption: null });
 const validInput = { donorName: "Avery Park", email: "avery@example.com", durationMonths: 36, dedication: "For Sunday walks.", showName: true, agreed: true };
@@ -8,6 +8,12 @@ const validInput = { donorName: "Avery Park", email: "avery@example.com", durati
 test("expired adoptions become available", () => {
   const bench = { ...availableBench(), status: "adopted", adoption: { endDate: "2025-01-01" } };
   assert.equal(getEffectiveStatus(bench, new Date("2026-01-01T12:00:00Z")), "available");
+});
+
+test("invalid dates do not crash formatting or change status", () => {
+  const bench = { ...availableBench(), status: "adopted", adoption: { endDate: "2026-99-99" } };
+  assert.equal(getEffectiveStatus(bench, new Date("2027-01-01T12:00:00Z")), "adopted");
+  assert.equal(formatDate(bench.adoption.endDate), "—");
 });
 
 test("filters by query, area, and effective status", () => {

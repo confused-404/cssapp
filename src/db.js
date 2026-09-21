@@ -216,7 +216,8 @@ export function deleteBenchImage(db, benchId, imageId) {
 }
 
 function effectiveStatus(row, now = new Date()) {
-  if (row.status === "adopted" && row.end_date && new Date(`${row.end_date}T23:59:59`) < now) return "available";
+  const end = row.end_date ? new Date(`${row.end_date}T23:59:59`) : null;
+  if (row.status === "adopted" && end && !Number.isNaN(end.getTime()) && end < now) return "available";
   return row.status;
 }
 
