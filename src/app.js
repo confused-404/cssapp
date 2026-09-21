@@ -286,7 +286,10 @@ function switchRoute(route) {
 function clearFilters() {
   filters = { search: "", area: "all", status: "all", photos: "all" };
   currentPage = 1;
-  $("#filters").reset();
+  $("#search").value = "";
+  $("#area-filter").value = "all";
+  $("#status-filter").value = "all";
+  $("#photo-filter").value = "all";
   renderBenches();
 }
 
@@ -322,7 +325,7 @@ async function initialize() {
     if (event.target.id === "photo-filter") filters.photos = event.target.value;
     currentPage = 1; renderBenches();
   });
-  $("#filters").addEventListener("reset", () => window.setTimeout(clearFilters));
+  $("#filters").addEventListener("reset", (event) => { event.preventDefault(); clearFilters(); });
   document.addEventListener("click", (event) => {
     const route = event.target.closest("[data-route]");
     const action = event.target.closest("[data-action]");
