@@ -32,14 +32,21 @@ export function openDatabase(filename) {
       duration_months INTEGER NOT NULL, dedication TEXT NOT NULL DEFAULT '', show_name INTEGER NOT NULL,
       status TEXT NOT NULL CHECK(status IN ('pending','approved','rejected')), submitted_at TEXT NOT NULL, reviewed_at TEXT
     );
+    CREATE TABLE IF NOT EXISTS adoption_history (
+      id TEXT PRIMARY KEY, bench_id TEXT NOT NULL REFERENCES benches(id) ON DELETE CASCADE,
+      donor_name TEXT NOT NULL, public_name TEXT NOT NULL, dedication TEXT NOT NULL DEFAULT '',
+      start_date TEXT NOT NULL, end_date TEXT NOT NULL, duration_months INTEGER, recorded_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS bench_images (
       id TEXT PRIMARY KEY, bench_id TEXT NOT NULL REFERENCES benches(id) ON DELETE CASCADE,
       filename TEXT NOT NULL, content_type TEXT NOT NULL, caption TEXT NOT NULL DEFAULT '',
       image_data BLOB NOT NULL, created_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS requests_status_idx ON requests(status);
+    CREATE INDEX IF NOT EXISTS adoption_history_bench_idx ON adoption_history(bench_id, start_date);
     CREATE INDEX IF NOT EXISTS bench_images_bench_idx ON bench_images(bench_id, created_at);
   `);
+  backfillAdoptionHistory(db);
   if (db.prepare("SELECT COUNT(*) AS count FROM benches").get().count === 0) seedDemo(db);
   else if (db.prepare("SELECT value FROM meta WHERE key='data_source'").get()?.value === "demo") {
     db.exec("BEGIN IMMEDIATE");
@@ -64,7 +71,29 @@ function insertBench(db, bench) {
       bench.id, bench.number, bench.area, bench.feature || "", bench.condition || "Good", bench.status,
       bench.adoption?.donorName || null, bench.adoption?.publicName || null, bench.adoption?.dedication || null,
       bench.adoption?.startDate || null, bench.adoption?.endDate || null, bench.adoption?.durationMonths || null
-    );
+  );
+  if (bench.adoption) recordAdoption(db, bench.id, bench.adoption, `HIST-IMPORT-${bench.id}-${bench.adoption.startDate}`, bench.adoption.startDate);
+}
+
+function recordAdoption(db, benchId, adoption, id = `HIST-${randomUUID()}`, recordedAt = new Date().toISOString()) {
+  db.prepare(`INSERT OR IGNORE INTO adoption_history(id,bench_id,donor_name,public_name,dedication,start_date,end_date,duration_months,recorded_at)
+    VALUES(?,?,?,?,?,?,?,?,?)`).run(
+    id, benchId, adoption.donorName || adoption.publicName || "Unknown", adoption.publicName || "Anonymous donor",
+    adoption.dedication || "", adoption.startDate, adoption.endDate, adoption.durationMonths, recordedAt
+  );
+}
+
+function backfillAdoptionHistory(db) {
+  const adopted = db.prepare(`SELECT id, donor_name, public_name, dedication, start_date, end_date, duration_months
+    FROM benches WHERE status='adopted' AND start_date IS NOT NULL AND end_date IS NOT NULL`).all();
+  for (const row of adopted) recordAdoption(db, row.id, {
+    donorName: row.donor_name,
+    publicName: row.public_name,
+    dedication: row.dedication,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    durationMonths: row.duration_months
+  }, `HIST-LEGACY-${row.id}-${row.start_date}`, row.start_date);
 }
 
 function insertRequest(db, request) {
@@ -224,6 +253,14 @@ export function reviewRequest(db, requestId, decision, now = new Date()) {
         request.donor_name, request.show_name ? request.donor_name : "Anonymous donor", request.dedication,
         now.toISOString().slice(0, 10), end.toISOString().slice(0, 10), request.duration_months, bench.id
       );
+      recordAdoption(db, bench.id, {
+        donorName: request.donor_name,
+        publicName: request.show_name ? request.donor_name : "Anonymous donor",
+        dedication: request.dedication,
+        startDate: now.toISOString().slice(0, 10),
+        endDate: end.toISOString().slice(0, 10),
+        durationMonths: request.duration_months
+      });
     } else db.prepare("UPDATE benches SET status='available' WHERE id=?").run(bench.id);
     db.prepare("UPDATE requests SET status=?,reviewed_at=? WHERE id=?").run(decision === "approve" ? "approved" : "rejected", now.toISOString(), requestId);
     setMeta(db, "updated_at", now.toISOString());

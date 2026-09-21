@@ -59,6 +59,16 @@ test("request and approval update the same persisted bench record", () => {
   db.close();
 });
 
+test("expired adoption history is retained when a bench is requested again", () => {
+  const db = openDatabase(":memory:");
+  importInventory(db, `bench_id,number,area,status,donor_name,public_name,dedication,start_date,end_date,duration_months
+OLD-01,1,Van Cortlandt Lake,adopted,Past Donor,Past Donor,For the park,2024-01-01,2025-01-01,12`);
+  submitRequest(db, { ...input, benchId: "OLD-01" }, new Date("2026-09-21T12:00:00Z"));
+  const history = db.prepare("SELECT donor_name, dedication, start_date, end_date FROM adoption_history WHERE bench_id=?").all("OLD-01");
+  assert.deepEqual(JSON.parse(JSON.stringify(history)), [{ donor_name: "Past Donor", dedication: "For the park", start_date: "2024-01-01", end_date: "2025-01-01" }]);
+  db.close();
+});
+
 test("bench images are stored, listed without blobs, and removed", () => {
   const db = openDatabase(":memory:");
   importInventory(db, inventory);
