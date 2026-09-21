@@ -4,15 +4,32 @@ import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { addBenchImage, deleteBenchImage, getBenchImage, getState, importInventory, openDatabase, reviewRequest, seedDemo, submitRequest } from "./src/db.js";
 import { detectImageType, MAX_IMAGE_BYTES } from "./src/images.js";
+import { authenticateAdmin, createAdmin, createAdminSession, deleteAdminSession, getAdminForSession } from "./src/auth.js";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
 const PORT = Number(process.env.PORT) || 4173;
 const db = openDatabase(process.env.DATABASE_PATH || join(ROOT, "data", "benches.db"));
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".svg": "image/svg+xml", ".json": "application/json" };
 
-function json(response, status, value) {
-  response.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+function json(response, status, value, headers = {}) {
+  response.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...headers });
   response.end(JSON.stringify(value));
+}
+
+function sessionToken(request) {
+  const cookies = Object.fromEntries(String(request.headers.cookie || "").split(";").map((part) => part.trim().split(/=(.*)/s).slice(0, 2)).filter(([key]) => key));
+  return cookies.bench_session ? decodeURIComponent(cookies.bench_session) : null;
+}
+
+function requireAdmin(request) {
+  const admin = getAdminForSession(db, sessionToken(request));
+  if (!admin) throw Object.assign(new Error("Log in to access the staff workspace."), { statusCode: 401 });
+  return admin;
+}
+
+function sessionCookie(token, maxAge = 60 * 60 * 24 * 7) {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return `bench_session=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`;
 }
 
 async function readBuffer(request, limit = 2_000_000) {
@@ -29,7 +46,32 @@ async function readBuffer(request, limit = 2_000_000) {
 async function readBody(request, limit) { return (await readBuffer(request, limit)).toString("utf8"); }
 
 async function api(request, response, url) {
-  if (request.method === "GET" && url.pathname === "/api/state") return json(response, 200, getState(db));
+  if (request.method === "POST" && url.pathname === "/api/auth/signup") {
+    const credentials = JSON.parse(await readBody(request));
+    const admin = createAdmin(db, credentials);
+    const session = createAdminSession(db, admin.id);
+    return json(response, 201, { admin }, { "set-cookie": sessionCookie(session.token) });
+  }
+  if (request.method === "POST" && url.pathname === "/api/auth/login") {
+    const credentials = JSON.parse(await readBody(request));
+    const admin = authenticateAdmin(db, credentials);
+    if (!admin) throw Object.assign(new Error("Email or password is incorrect."), { statusCode: 401 });
+    const session = createAdminSession(db, admin.id);
+    return json(response, 200, { admin }, { "set-cookie": sessionCookie(session.token) });
+  }
+  if (request.method === "GET" && url.pathname === "/api/auth/session") return json(response, 200, { admin: getAdminForSession(db, sessionToken(request)) });
+  if (request.method === "POST" && url.pathname === "/api/auth/logout") {
+    deleteAdminSession(db, sessionToken(request));
+    return json(response, 200, { ok: true }, { "set-cookie": sessionCookie("", 0) });
+  }
+  if (request.method === "GET" && url.pathname === "/api/state") {
+    const { benches, meta } = getState(db);
+    return json(response, 200, { benches, requests: [], meta });
+  }
+  if (request.method === "GET" && url.pathname === "/api/admin/state") {
+    requireAdmin(request);
+    return json(response, 200, getState(db));
+  }
   const publicImageMatch = url.pathname.match(/^\/api\/images\/([^/]+)$/);
   if (request.method === "GET" && publicImageMatch) {
     const image = getBenchImage(db, decodeURIComponent(publicImageMatch[1]));
@@ -42,17 +84,20 @@ async function api(request, response, url) {
   }
   const reviewMatch = url.pathname.match(/^\/api\/requests\/([^/]+)$/);
   if (request.method === "PATCH" && reviewMatch) {
+    requireAdmin(request);
     const { decision } = JSON.parse(await readBody(request));
     reviewRequest(db, decodeURIComponent(reviewMatch[1]), decision);
     return json(response, 200, { ok: true });
   }
   if (request.method === "POST" && url.pathname === "/api/admin/import") {
+    requireAdmin(request);
     const sourceName = request.headers["x-source-name"] || "bench-inventory.csv";
     const count = importInventory(db, await readBody(request), String(sourceName).slice(0, 200));
     return json(response, 200, { ok: true, count });
   }
   const uploadMatch = url.pathname.match(/^\/api\/admin\/benches\/([^/]+)\/images$/);
   if (request.method === "POST" && uploadMatch) {
+    requireAdmin(request);
     const data = await readBuffer(request, MAX_IMAGE_BYTES);
     const contentType = detectImageType(data);
     if (!contentType) throw Object.assign(new Error("Upload a JPEG, PNG, WebP, or GIF image."), { statusCode: 415 });
@@ -63,10 +108,12 @@ async function api(request, response, url) {
   }
   const deleteImageMatch = url.pathname.match(/^\/api\/admin\/benches\/([^/]+)\/images\/([^/]+)$/);
   if (request.method === "DELETE" && deleteImageMatch) {
+    requireAdmin(request);
     deleteBenchImage(db, decodeURIComponent(deleteImageMatch[1]), decodeURIComponent(deleteImageMatch[2]));
     return json(response, 200, { ok: true });
   }
   if (request.method === "POST" && url.pathname === "/api/admin/reset-demo") {
+    requireAdmin(request);
     seedDemo(db);
     const state = getState(db);
     return json(response, 200, { ok: true, pendingRequests: state.requests.filter((item) => item.status === "pending").length });

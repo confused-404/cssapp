@@ -10,6 +10,7 @@ let adminFilters = { search: "", area: "all", status: "all", photos: "all", cond
 let adminSort = { key: "number", direction: "asc" };
 let adminPage = 1;
 let adminPageSize = 25;
+let currentAdmin = null;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -21,13 +22,14 @@ async function apiFetch(path, options = {}) {
   if (!response.ok) {
     const error = new Error(value.error || "The server could not complete that request.");
     error.fields = value.errors;
+    error.status = response.status;
     throw error;
   }
   return value;
 }
 
 async function refreshState() {
-  state = await apiFetch("/api/state");
+  state = await apiFetch(currentAdmin ? "/api/admin/state" : "/api/state");
   renderAll();
 }
 
@@ -65,6 +67,7 @@ function renderStats() {
   $("#data-banner").hidden = !isDemo;
   $("#data-banner").textContent = "Demo dataset — import the park’s inventory from Staff view before production use.";
   $("#source-summary").textContent = `${isDemo ? "Demo data" : "Imported inventory"} · ${state.meta.source_name || "Unknown source"}`;
+  $("#demo-credentials").hidden = !isDemo;
 }
 
 function renderAreaOptions() {
@@ -222,6 +225,7 @@ async function submitAdoption(form, benchId) {
 }
 
 function renderAdmin() {
+  $("#admin-email").textContent = currentAdmin?.email || "";
   const pending = state.requests.filter((request) => request.status === "pending").sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   $("#request-list").innerHTML = pending.length ? pending.map((request) => {
     const bench = state.benches.find((item) => item.id === request.benchId);
@@ -339,11 +343,43 @@ async function reviewRequest(requestId, decision) {
 }
 
 function switchRoute(route) {
+  const needsLogin = route === "admin" && !currentAdmin;
   $("#browse-view").hidden = route !== "browse";
-  $("#admin-view").hidden = route !== "admin";
+  $("#auth-view").hidden = !needsLogin;
+  $("#admin-view").hidden = route !== "admin" || needsLogin;
   $$("[data-route]").forEach((item) => item.classList.toggle("active", item.dataset.route === route));
-  if (route === "admin") renderAdmin();
+  if (route === "admin" && currentAdmin) renderAdmin();
   window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+async function submitAuth(event, endpoint) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const errorBox = $("[data-auth-error]", form);
+  const button = $("button[type='submit']", form);
+  const values = new FormData(form);
+  errorBox.hidden = true;
+  button.disabled = true;
+  try {
+    const result = await apiFetch(endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: values.get("email"), password: values.get("password") }) });
+    currentAdmin = result.admin;
+    form.reset();
+    await refreshState();
+    switchRoute("admin");
+    toast(endpoint.endsWith("signup") ? "Staff account created." : "Logged in.");
+  } catch (error) {
+    errorBox.textContent = error.message;
+    errorBox.hidden = false;
+  } finally { button.disabled = false; }
+}
+
+async function logout() {
+  try { await apiFetch("/api/auth/logout", { method: "POST" }); }
+  catch {}
+  currentAdmin = null;
+  await refreshState();
+  switchRoute("admin");
+  toast("Logged out.");
 }
 
 function clearFilters() {
@@ -442,12 +478,19 @@ async function initialize() {
   $("#reset-demo").addEventListener("click", () => $("#confirm-dialog").showModal());
   $("#confirm-reset").addEventListener("click", async () => { try { await apiFetch("/api/admin/reset-demo", { method: "POST" }); await refreshState(); toast("Demo data was reset."); } catch (error) { toast(error.message, "error"); } });
   $("#import-form").addEventListener("submit", importInventory);
+  $("#login-form").addEventListener("submit", (event) => submitAuth(event, "/api/auth/login"));
+  $("#signup-form").addEventListener("submit", (event) => submitAuth(event, "/api/auth/signup"));
+  $("#logout-button").addEventListener("click", logout);
   $("#photo-upload-form").addEventListener("submit", uploadPhoto);
   $("#photo-bench-select").addEventListener("change", (event) => { selectedPhotoBenchId = event.target.value; renderPhotoManager(); });
   $("#download-template").addEventListener("click", downloadTemplate);
   [$("#bench-dialog"), $("#adoption-dialog"), $("#confirm-dialog")].forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
   try { viewMode = window.localStorage.getItem("bench-directory-view") === "list" ? "list" : "card"; } catch {}
-  try { await refreshState(); }
+  try {
+    const session = await apiFetch("/api/auth/session");
+    currentAdmin = session.admin;
+    await refreshState();
+  }
   catch (error) {
     $("#bench-grid").innerHTML = `<div class="quiet-state"><strong>We couldn’t load the bench directory.</strong><br>${escapeHtml(error.message)} Refresh the page to try again.</div>`;
     $("#result-count").textContent = "Unavailable";

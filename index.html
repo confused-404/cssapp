@@ -87,10 +87,39 @@
         </section>
       </section>
 
+      <section id="auth-view" class="view auth-view" hidden>
+        <div class="auth-shell">
+          <div class="auth-intro">
+            <p class="eyebrow">Staff access</p>
+            <h1>Manage bench adoptions.</h1>
+            <p>Log in to review requests, maintain the directory, and manage public photos.</p>
+            <div id="demo-credentials" class="demo-credentials" hidden><strong>Demo administrator</strong><code>test@gmail.com</code><code>test</code></div>
+          </div>
+          <div class="auth-forms">
+            <form id="login-form" class="auth-card" novalidate>
+              <h2>Log in</h2>
+              <p>Use your staff account to continue.</p>
+              <div class="form-error" data-auth-error hidden></div>
+              <label class="form-field"><span>Email</span><input name="email" type="email" autocomplete="email" required /></label>
+              <label class="form-field"><span>Password</span><input name="password" type="password" autocomplete="current-password" required /></label>
+              <button class="button" type="submit">Log in</button>
+            </form>
+            <form id="signup-form" class="auth-card" novalidate>
+              <h2>Create an account</h2>
+              <p>For additional staff members.</p>
+              <div class="form-error" data-auth-error hidden></div>
+              <label class="form-field"><span>Email</span><input name="email" type="email" autocomplete="email" required /></label>
+              <label class="form-field"><span>Password</span><input name="password" type="password" minlength="4" autocomplete="new-password" required /><span class="field-hint">At least 4 characters for this MVP.</span></label>
+              <button class="button secondary" type="submit">Create account</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
       <section id="admin-view" class="view admin-view" hidden>
         <div class="admin-header">
           <div><p class="eyebrow">Staff workspace</p><h1>Adoption management</h1><p>Review requests and maintain the shared park directory.</p><p id="source-summary" class="source-summary"></p></div>
-          <button id="reset-demo" class="button danger secondary">Reset demo data</button>
+          <div class="admin-account"><span id="admin-email"></span><button id="logout-button" class="button secondary">Log out</button><button id="reset-demo" class="button danger secondary">Reset demo data</button></div>
         </div>
         <div id="admin-stats" class="admin-stats"></div>
         <section class="admin-panel import-panel" aria-labelledby="import-heading">

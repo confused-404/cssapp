@@ -31,6 +31,7 @@ npm test
 - Import the park's real bench inventory from a validated CSV in Staff view.
 - Upload, caption, and remove up to six public photos per bench from Staff view.
 - Search and combine area, lifecycle status, condition, and photo filters across the complete staff directory; sort every operational column and paginate at 25, 50, or 100 rows.
+- Create a staff account, log in with a salted password hash, and retain access through a revocable HTTP-only server session.
 - Treat expired adoptions as available without mutating their historical record.
 
 ## Product assumptions
@@ -68,6 +69,17 @@ No official Van Cortlandt Park bench inventory was supplied with the prompt. Whe
 
 Stock-photo provenance and licenses are recorded in [`assets/stock/README.md`](assets/stock/README.md). Imported real inventories never receive these sample photos.
 
+## Demo staff account
+
+The generated demo database includes:
+
+```text
+Email: test@gmail.com
+Password: test
+```
+
+Staff requests and mutation endpoints require an authenticated session. Passwords are salted and hashed with Node's `scrypt`; the browser receives only an HTTP-only, same-site session cookie. Open signup is included because the prompt requested a simple signup flow. A production deployment should replace it with invitation-only account creation or an organization identity provider.
+
 To load live inventory, open **Staff view → Import real bench data**, download the template, and upload a completed CSV. Importing atomically replaces the directory, clears requests tied to the previous inventory, and records the source filename and timestamp. From that point forward, the public directory, new adoption requests, and staff decisions all read and write `data/benches.db` through the API.
 
 Required CSV columns are `bench_id`, `number`, and `area`. Optional supported columns are `feature`, `condition`, `status`, `donor_name`, `public_name`, `dedication`, `start_date`, `end_date`, and `duration_months`. Adopted rows require ISO-format start and end dates.
@@ -88,4 +100,4 @@ Required CSV columns are `bench_id`, `number`, and `area`. Optional supported co
 
 ## What I would build next
 
-For production, the first increment would add staff authentication/authorization, an audit log, automated backups, email notifications, and deployment-managed database migrations. SQLite is appropriate for a single small deployment; a multi-instance service would use PostgreSQL with the same transactional boundary. After validating coordinates, I would add a map as an alternate—not exclusive—way to browse. I would also confirm renewal, plaque-copy moderation, accessibility, and data-retention policy with park staff before expanding the workflow.
+For production, the first increment would add role-based authorization, invitation-only account creation, password resets, login throttling, CSRF protection, an audit log, automated backups, email notifications, and deployment-managed database migrations. SQLite is appropriate for a single small deployment; a multi-instance service would use PostgreSQL with the same transactional boundary. After validating coordinates, I would add a map as an alternate—not exclusive—way to browse. I would also confirm renewal, plaque-copy moderation, accessibility, and data-retention policy with park staff before expanding the workflow.

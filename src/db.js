@@ -7,6 +7,7 @@ import { createSeedData } from "./data.js";
 import { parseBenchInventory } from "./csv.js";
 import { validateAdoption } from "./domain.js";
 import { MAX_IMAGES_PER_BENCH } from "./images.js";
+import { initializeAuth } from "./auth.js";
 
 const STOCK_ROOT = fileURLToPath(new URL("../assets/stock/", import.meta.url));
 const STOCK_IMAGES = [
@@ -49,6 +50,7 @@ export function openDatabase(filename) {
     }
     catch (error) { db.exec("ROLLBACK"); throw error; }
   }
+  initializeAuth(db, { seedDemoAdmin: db.prepare("SELECT value FROM meta WHERE key='data_source'").get()?.value === "demo" });
   return db;
 }
 
@@ -89,6 +91,7 @@ export function seedDemo(db) {
     setMeta(db, "updated_at", new Date().toISOString());
     db.exec("COMMIT");
   } catch (error) { db.exec("ROLLBACK"); throw error; }
+  initializeAuth(db, { seedDemoAdmin: true });
 }
 
 function ensureDemoPendingRequests(db) {
