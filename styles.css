@@ -137,8 +137,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .import-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .75rem; }
 .section-note { max-width: 660px; margin: .35rem 0 0; color: var(--muted); font-size: .86rem; }
 .photo-manager { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
-.photo-upload-form { display: grid; grid-template-columns: 1fr 1.25fr 1.25fr auto; gap: .75rem; align-items: end; padding: 1.2rem; border-bottom: 1px solid var(--line); }
-.photo-upload-form .button { margin-bottom: 1.1rem; }
+.photo-upload-form { display: grid; grid-template-columns: 1fr 1.25fr 1.25fr auto; gap: .75rem; align-items: start; padding: 1.2rem; border-bottom: 1px solid var(--line); }
+.photo-upload-form .button { margin-top: 1.55rem; }
 .staff-photo-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; padding: 1.2rem; }
 .staff-photo { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; }
 .staff-photo img { width: 100%; aspect-ratio: 16 / 10; display: block; object-fit: cover; background: #e8ece8; }
@@ -217,7 +217,7 @@ tbody tr:hover { background: #f5f7f3; }
   .request-card { grid-template-columns: 1fr; }
   .import-panel { grid-template-columns: 1fr; }
   .photo-upload-form { grid-template-columns: 1fr 1fr; }
-  .photo-upload-form .button { margin-bottom: 0; }
+  .photo-upload-form .button { margin-top: 1.55rem; }
   .admin-record-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-search { grid-column: 1 / -1; }
 }
@@ -244,6 +244,7 @@ tbody tr:hover { background: #f5f7f3; }
   .form-actions .button { width: 100%; }
   .import-actions { flex-direction: column; }
   .photo-upload-form, .staff-photo-list { grid-template-columns: 1fr; }
+  .photo-upload-form .button { margin-top: 0; }
   .gallery-thumbs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .admin-record-filters { grid-template-columns: 1fr; }
   .admin-search { grid-column: auto; }
