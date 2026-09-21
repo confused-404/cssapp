@@ -73,8 +73,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .link-button { border: 0; padding: 0; background: none; color: var(--green-700); cursor: pointer; font-weight: 750; text-decoration: underline; text-underline-offset: 3px; }
 
 .bench-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
-.bench-card { position: relative; display: flex; flex-direction: column; min-height: 260px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: 0 2px 8px rgb(26 55 40 / 3%); }
+.bench-card { position: relative; display: flex; flex-direction: column; min-height: 260px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: 0 2px 8px rgb(26 55 40 / 3%); cursor: pointer; }
 .bench-card:hover { border-color: #b3c1b8; box-shadow: var(--shadow); transform: translateY(-2px); transition: .18s ease; }
+.bench-card:focus-visible { outline: 3px solid #e4a83b; outline-offset: 3px; box-shadow: var(--shadow); }
 .bench-card-top { min-height: 130px; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: .85rem; padding: 1.25rem; }
 .bench-card[data-status="available"] { border-color: #a8cbb5; }
 .bench-card[data-status="available"] .bench-card-top { background: linear-gradient(145deg, #d7eadc, #edf5ef); }
