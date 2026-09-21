@@ -40,9 +40,13 @@ export function openDatabase(filename) {
     CREATE INDEX IF NOT EXISTS bench_images_bench_idx ON bench_images(bench_id, created_at);
   `);
   if (db.prepare("SELECT COUNT(*) AS count FROM benches").get().count === 0) seedDemo(db);
-  else if (db.prepare("SELECT value FROM meta WHERE key='data_source'").get()?.value === "demo" && !db.prepare("SELECT value FROM meta WHERE key='stock_images_seeded'").get()) {
+  else if (db.prepare("SELECT value FROM meta WHERE key='data_source'").get()?.value === "demo") {
     db.exec("BEGIN IMMEDIATE");
-    try { seedStockImages(db); db.exec("COMMIT"); }
+    try {
+      if (!db.prepare("SELECT value FROM meta WHERE key='stock_images_seeded'").get()) seedStockImages(db);
+      ensureDemoPendingRequests(db);
+      db.exec("COMMIT");
+    }
     catch (error) { db.exec("ROLLBACK"); throw error; }
   }
   return db;
@@ -61,12 +65,21 @@ function insertBench(db, bench) {
     );
 }
 
+function insertRequest(db, request) {
+  db.prepare(`INSERT INTO requests(id,bench_id,donor_name,email,duration_months,dedication,show_name,status,submitted_at,reviewed_at)
+    VALUES(?,?,?,?,?,?,?,?,?,?)`).run(
+      request.id, request.benchId, request.donorName, request.email, request.durationMonths, request.dedication || "",
+      request.showName ? 1 : 0, request.status || "pending", request.submittedAt, request.reviewedAt || null
+    );
+}
+
 export function seedDemo(db) {
   const seed = createSeedData();
   db.exec("BEGIN IMMEDIATE");
   try {
     db.exec("DELETE FROM requests; DELETE FROM benches;");
     seed.benches.forEach((bench) => insertBench(db, bench));
+    seed.requests.forEach((request) => insertRequest(db, request));
     setMeta(db, "stock_images_seeded", "0");
     seedStockImages(db);
     setMeta(db, "data_source", "demo");
@@ -74,6 +87,23 @@ export function seedDemo(db) {
     setMeta(db, "updated_at", new Date().toISOString());
     db.exec("COMMIT");
   } catch (error) { db.exec("ROLLBACK"); throw error; }
+}
+
+function ensureDemoPendingRequests(db) {
+  const templates = new Map(createSeedData().requests.map((request) => [request.benchId, request]));
+  const missing = db.prepare(`SELECT b.id FROM benches b
+    WHERE b.status='pending' AND NOT EXISTS (
+      SELECT 1 FROM requests r WHERE r.bench_id=b.id AND r.status='pending'
+    )`).all();
+  for (const { id } of missing) {
+    const template = templates.get(id);
+    if (template) insertRequest(db, template);
+    else insertRequest(db, {
+      id: `REQ-DEMO-${id}`, benchId: id, donorName: "Demo Applicant", email: "demo.applicant@example.com",
+      durationMonths: 12, dedication: "Demo adoption request", showName: false, status: "pending", submittedAt: new Date().toISOString()
+    });
+  }
+  setMeta(db, "demo_requests_reconciled_at", new Date().toISOString());
 }
 
 function seedStockImages(db) {

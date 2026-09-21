@@ -20,6 +20,8 @@ const dedications = [
   ["The Chen Family", "With gratitude for this beautiful park."]
 ];
 
+const requesters = ["Avery Johnson", "Jordan Lee", "Sam Rivera", "Casey Morgan", "Riley Chen", "Taylor Brooks"];
+
 function isoDate(yearOffset, monthOffset = 0) {
   const date = new Date();
   date.setHours(12, 0, 0, 0);
@@ -58,7 +60,24 @@ export function createSeedData() {
     };
   });
 
-  return { version: 1, benches, requests: [], updatedAt: new Date().toISOString() };
+  const requests = benches.filter((bench) => bench.status === "pending").map((bench, index) => {
+    const submittedAt = new Date();
+    submittedAt.setDate(submittedAt.getDate() - (index % 12));
+    const donorName = requesters[index % requesters.length];
+    return {
+      id: `REQ-DEMO-${bench.id}`,
+      benchId: bench.id,
+      donorName,
+      email: `${donorName.toLocaleLowerCase().replace(/[^a-z]+/g, ".").replace(/\.$/, "")}@example.com`,
+      durationMonths: [12, 36, 60][index % 3],
+      dedication: index % 2 ? "For everyone who finds a quiet moment here." : "In celebration of our neighborhood park.",
+      showName: index % 4 !== 0,
+      status: "pending",
+      submittedAt: submittedAt.toISOString()
+    };
+  });
+
+  return { version: 1, benches, requests, updatedAt: new Date().toISOString() };
 }
 
 export { AREAS };

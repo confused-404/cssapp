@@ -64,7 +64,7 @@ The business rules are kept out of the DOM code and server writes use SQLite tra
 
 ## Data provenance
 
-No official Van Cortlandt Park bench inventory was supplied with the prompt. When the database has no bench rows, the server automatically inserts a deterministic, visibly labeled **demo dataset** into SQLite so reviewers can exercise the full workflow; it does not claim those records are real. Three demo benches also receive public-domain sample gallery photos, clearly captioned as samples. The browser never imports seed records: all public and staff views read the database through `/api/state`.
+No official Van Cortlandt Park bench inventory was supplied with the prompt. When the database has no bench rows, the server automatically inserts a deterministic, visibly labeled **demo dataset** into SQLite so reviewers can exercise the full workflow; it does not claim those records are real. Every demo bench marked pending has a matching staff request, including a reconciliation step for databases created by older versions. Three demo benches also receive public-domain sample gallery photos, clearly captioned as samples. The browser never imports seed records: all public and staff views read the database through `/api/state`.
 
 Stock-photo provenance and licenses are recorded in [`assets/stock/README.md`](assets/stock/README.md). Imported real inventories never receive these sample photos.
 
