@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "description": "A small Node and SQLite MVP for Van Cortlandt Park bench adoptions",
+  "engines": {
+    "node": ">=22.5.0 <25"
+  },
   "scripts": {
     "start": "node server.js",
     "test": "node --test"

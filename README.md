@@ -1,12 +1,13 @@
 # Van Cortlandt Park Bench Adoption
 
-A deliberately small MVP for finding, requesting, and managing bench adoptions. A dependency-free Node server exposes a JSON API backed by SQLite, so every visitor and staff member uses the same durable source of truth.
+A deliberately small MVP for finding, requesting, and managing bench adoptions. A dependency-free Node server exposes a JSON API backed by SQLite, with the business rules kept separate from the browser UI.
 
 ## Run it
 
 Requires Node 22.5+ for the built-in SQLite module (Node 24 recommended).
 
 ```bash
+npm install
 npm start
 ```
 
@@ -15,6 +16,16 @@ Open <http://localhost:4173>. In another terminal:
 ```bash
 npm test
 ```
+
+## Reviewer tour
+
+1. Open the public directory and search, filter, switch views, and open a bench detail dialog.
+2. Choose an available bench, submit a request, and confirm that it becomes pending.
+3. Open **Staff view** and log in with the demo account below.
+4. Approve or decline the request, then return to the public directory to see the updated status.
+5. Try the CSV template and photo manager from the staff workspace. **Reset demo data** restores the seeded dataset while demo data is active.
+
+The generated dataset is intentionally fictional and safe to reset. It is there so the complete workflow can be evaluated without an external inventory.
 
 ## What works
 
@@ -27,11 +38,11 @@ npm test
 - Submit an adoption request with inline validation and an explicit privacy choice.
 - Prevent a second request once a bench is held.
 - Review, approve, or decline pending requests in the staff view.
-- Persist all changes in a shared server-side SQLite database at `data/benches.db`.
+- Store the current directory and adoption records in server-side SQLite at `data/benches.db`; completed adoptions are also retained in a private history table.
 - Import the park's real bench inventory from a validated CSV in Staff view.
 - Upload, caption, and remove up to six public photos per bench from Staff view.
 - Search and combine area, lifecycle status, condition, and photo filters across the complete staff directory; sort every operational column and paginate at 25, 50, or 100 rows.
-- Create a staff account, log in with a salted password hash, and retain access through a revocable HTTP-only server session.
+- Log in with a salted password hash and retain access through a revocable HTTP-only server session. Open signup is disabled by default.
 - Treat expired adoptions as available without mutating their historical record.
 
 ## Product assumptions
@@ -43,7 +54,7 @@ The brief is intentionally open-ended, so I made these decisions explicit:
 3. **One active request per bench.** This avoids conflicting promises before payment or staff review. Declining a request releases the bench.
 4. **Terms are 1, 3, or 5 years.** These are placeholders for park policy, isolated in the form/domain logic so they are easy to change.
 5. **No payment.** The prompt excludes payment, so approval represents the handoff to whatever offline process follows.
-6. **Staff access is visible for evaluation.** A real deployment must put it behind authentication and authorization. Open staff signup is disabled by default; enable `ALLOW_OPEN_SIGNUP=true` only for controlled demos.
+6. **Staff access is visible for evaluation.** Staff mutations require authentication. Open signup is disabled by default; enable `ALLOW_OPEN_SIGNUP=true` only for a controlled demo.
 7. **List over map for the MVP.** A searchable list is accessible, testable, and useful even without verified coordinates. A map becomes valuable only after the park supplies accurate GIS data.
 
 ## Structure
@@ -52,7 +63,7 @@ The brief is intentionally open-ended, so I made these decisions explicit:
 index.html          Semantic page shell and dialogs
 styles.css          Responsive visual system
 server.js           Static server and JSON API
-src/db.js           SQLite schema, transactions, and queries
+src/db.js           SQLite schema, transactions, queries, and history
 src/csv.js          Validated real-inventory import
 src/data.js         Server-only first-run seed inserted into SQLite
 src/images.js       Image limits and content-signature validation
@@ -65,7 +76,7 @@ The business rules are kept out of the DOM code and server writes use SQLite tra
 
 ## Data provenance
 
-No official Van Cortlandt Park bench inventory was supplied with the prompt. When the database has no bench rows, the server automatically inserts a deterministic, visibly labeled **demo dataset** into SQLite so reviewers can exercise the full workflow; it does not claim those records are real. Every demo bench marked pending has a matching staff request, including a reconciliation step for databases created by older versions. Three demo benches also receive public-domain sample gallery photos, clearly captioned as samples. The browser never imports seed records: all public and staff views read the database through `/api/state`.
+No official Van Cortlandt Park bench inventory was supplied with the prompt. When the database has no bench rows, the server automatically inserts a deterministic, visibly labeled **demo dataset** into SQLite so reviewers can exercise the full workflow; it does not claim those records are real. Every demo bench marked pending has a matching staff request, including a reconciliation step for databases created by older versions. Three demo benches also receive public-domain sample gallery photos, clearly captioned as samples. All public and staff views read the database through the API.
 
 Stock-photo provenance and licenses are recorded in [`assets/stock/README.md`](assets/stock/README.md). Imported real inventories never receive these sample photos.
 
@@ -84,6 +95,10 @@ To load live inventory, open **Staff view → Import real bench data**, download
 
 Required CSV columns are `bench_id`, `number`, and `area`. Optional supported columns are `feature`, `condition`, `status`, `donor_name`, `public_name`, `dedication`, `start_date`, `end_date`, and `duration_months`. Adopted rows require ISO-format start and end dates.
 
+## Demo hosting note
+
+The app works on a single Render Web Service without a persistent disk for a disposable presentation. Set the service to run `npm start`, use Node 24, and keep `ALLOW_OPEN_SIGNUP` unset or `false`. The service binds to Render's `PORT` and uses an ephemeral SQLite file, so requests, photos, and imported data can reset after a sleep, restart, or redeploy. That is expected for this demo; use persistent storage and backups before treating the data as real.
+
 ## Sad paths handled
 
 - Required, invalid-email, missing-term, missing-consent, and overlong-dedication validation.
@@ -96,7 +111,7 @@ Required CSV columns are `bench_id`, `number`, and `area`. Optional supported co
 - Invalid inventory files rejected before replacing live records.
 - Non-image uploads, files over 5 MB, captions over 160 characters, and a seventh photo rejected server-side.
 - API/network failure messaging.
-- Destructive demo reset requires confirmation.
+- Destructive demo reset requires confirmation and is unavailable once imported inventory is active.
 
 ## What I would build next
 
