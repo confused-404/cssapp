@@ -38,7 +38,7 @@ The generated dataset is intentionally fictional and safe to reset. It is there 
 - Submit an adoption request with inline validation and an explicit privacy choice.
 - Prevent a second request once a bench is held.
 - Review, approve, or decline pending requests in the staff view.
-- Print a clearly labeled mock email notification to both the browser DevTools console and server console when staff approve or decline a request; no email provider is connected.
+- Print a clearly labeled mock email notification to both the browser DevTools console and server console when staff approve or decline a request. Open DevTools → **Console** while using Staff view to see it; no email provider is connected.
 - Store the current directory and adoption records in server-side SQLite at `data/benches.db`; completed adoptions are also retained in a private history table.
 - Import the park's real bench inventory from a validated CSV in Staff view.
 - Upload, caption, and remove up to six public photos per bench from Staff view.
