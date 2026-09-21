@@ -1,11 +1,19 @@
 import { randomUUID } from "node:crypto";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import { createSeedData } from "./data.js";
 import { parseBenchInventory } from "./csv.js";
 import { validateAdoption } from "./domain.js";
 import { MAX_IMAGES_PER_BENCH } from "./images.js";
+
+const STOCK_ROOT = fileURLToPath(new URL("../assets/stock/", import.meta.url));
+const STOCK_IMAGES = [
+  { id: "IMG-DEMO-L-001", benchId: "L-001", filename: "eagle-lake-bench.jpg", caption: "Sample gallery photo — bench beside a wooded path." },
+  { id: "IMG-DEMO-P-001", benchId: "P-001", filename: "lake-meridian-bench.jpg", caption: "Sample gallery photo — adopted bench in a community park." },
+  { id: "IMG-DEMO-A-001", benchId: "A-001", filename: "seneca-lake-bench.jpg", caption: "Sample gallery photo — bench overlooking a lake." }
+];
 
 export function openDatabase(filename) {
   if (filename !== ":memory:") mkdirSync(dirname(filename), { recursive: true });
@@ -32,6 +40,11 @@ export function openDatabase(filename) {
     CREATE INDEX IF NOT EXISTS bench_images_bench_idx ON bench_images(bench_id, created_at);
   `);
   if (db.prepare("SELECT COUNT(*) AS count FROM benches").get().count === 0) seedDemo(db);
+  else if (db.prepare("SELECT value FROM meta WHERE key='data_source'").get()?.value === "demo" && !db.prepare("SELECT value FROM meta WHERE key='stock_images_seeded'").get()) {
+    db.exec("BEGIN IMMEDIATE");
+    try { seedStockImages(db); db.exec("COMMIT"); }
+    catch (error) { db.exec("ROLLBACK"); throw error; }
+  }
   return db;
 }
 
@@ -54,11 +67,23 @@ export function seedDemo(db) {
   try {
     db.exec("DELETE FROM requests; DELETE FROM benches;");
     seed.benches.forEach((bench) => insertBench(db, bench));
+    setMeta(db, "stock_images_seeded", "0");
+    seedStockImages(db);
     setMeta(db, "data_source", "demo");
     setMeta(db, "source_name", "Generated evaluation dataset");
     setMeta(db, "updated_at", new Date().toISOString());
     db.exec("COMMIT");
   } catch (error) { db.exec("ROLLBACK"); throw error; }
+}
+
+function seedStockImages(db) {
+  for (const image of STOCK_IMAGES) {
+    const path = join(STOCK_ROOT, image.filename);
+    if (!existsSync(path) || !db.prepare("SELECT 1 FROM benches WHERE id=?").get(image.benchId)) continue;
+    db.prepare(`INSERT OR IGNORE INTO bench_images(id,bench_id,filename,content_type,caption,image_data,created_at)
+      VALUES(?,?,?,'image/jpeg',?,?,?)`).run(image.id, image.benchId, image.filename, image.caption, readFileSync(path), new Date().toISOString());
+  }
+  setMeta(db, "stock_images_seeded", "1");
 }
 
 function rowToBench(row) {

@@ -22,6 +22,8 @@ test("an empty database is automatically populated before reads", () => {
   const state = getState(db);
   assert.ok(state.benches.length > 0);
   assert.equal(state.meta.data_source, "demo");
+  assert.equal(state.benches.reduce((count, bench) => count + bench.images.length, 0), 3);
+  assert.equal(state.meta.stock_images_seeded, "1");
   db.close();
 });
 

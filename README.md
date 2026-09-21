@@ -62,7 +62,9 @@ The business rules are kept out of the DOM code and server writes use SQLite tra
 
 ## Data provenance
 
-No official Van Cortlandt Park bench inventory was supplied with the prompt. When the database has no bench rows, the server automatically inserts a deterministic, visibly labeled **demo dataset** into SQLite so reviewers can exercise the full workflow; it does not claim those records are real. The browser never imports seed records: all public and staff views read the database through `/api/state`.
+No official Van Cortlandt Park bench inventory was supplied with the prompt. When the database has no bench rows, the server automatically inserts a deterministic, visibly labeled **demo dataset** into SQLite so reviewers can exercise the full workflow; it does not claim those records are real. Three demo benches also receive public-domain sample gallery photos, clearly captioned as samples. The browser never imports seed records: all public and staff views read the database through `/api/state`.
+
+Stock-photo provenance and licenses are recorded in [`assets/stock/README.md`](assets/stock/README.md). Imported real inventories never receive these sample photos.
 
 To load live inventory, open **Staff view → Import real bench data**, download the template, and upload a completed CSV. Importing atomically replaces the directory, clears requests tied to the previous inventory, and records the source filename and timestamp. From that point forward, the public directory, new adoption requests, and staff decisions all read and write `data/benches.db` through the API.
 
