@@ -337,8 +337,18 @@ async function deletePhoto(benchId, imageId) {
 }
 
 async function reviewRequest(requestId, decision) {
+  const request = state.requests.find((item) => item.id === requestId);
   try {
     await apiFetch(`/api/requests/${encodeURIComponent(requestId)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ decision }) });
+    if (request) {
+      const outcome = decision === "approve" ? "approved" : "declined";
+      console.info("[mock email]", {
+        to: request.email,
+        subject: `Bench adoption request ${outcome}`,
+        benchId: request.benchId,
+        requestId: request.id
+      });
+    }
     await refreshState();
     toast(`Request ${decision === "approve" ? "approved" : "declined"}.`);
   } catch (error) { toast(error.message, "error"); }
