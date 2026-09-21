@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { approveRequest, createRequest, filterBenches, getEffectiveStatus, rejectRequest, validateAdoption } from "../src/domain.js";
+import { approveRequest, createRequest, filterAdminBenches, filterBenches, getAdminStatus, getEffectiveStatus, rejectRequest, sortAdminBenches, validateAdoption } from "../src/domain.js";
 
 const availableBench = () => ({ id: "L-001", number: 1, area: "Van Cortlandt Lake", feature: "Lake views", status: "available", adoption: null });
 const validInput = { donorName: "Avery Park", email: "avery@example.com", durationMonths: 36, dedication: "For Sunday walks.", showName: true, agreed: true };
@@ -23,6 +23,26 @@ test("filters benches with and without gallery photos", () => {
   ];
   assert.deepEqual(filterBenches(benches, { photos: "with" }).map((bench) => bench.id), ["L-001"]);
   assert.deepEqual(filterBenches(benches, { photos: "without" }).map((bench) => bench.id), ["P-002"]);
+});
+
+test("staff filters search private operational fields and distinguish expired adoptions", () => {
+  const expired = { ...availableBench(), id: "A-010", number: 10, area: "Aqueduct", condition: "Needs inspection", status: "adopted", images: [{ id: "IMG-1" }], adoption: { donorName: "Morgan Lee", publicName: "Anonymous donor", dedication: "For Morgan", endDate: "2025-01-01" } };
+  const available = { ...availableBench(), id: "P-002", number: 2, area: "Parade Ground", condition: "Good", images: [] };
+  const today = new Date("2026-01-01T12:00:00Z");
+  assert.equal(getAdminStatus(expired, today), "expired");
+  assert.deepEqual(filterAdminBenches([expired, available], { search: "For Morgan", status: "expired", photos: "with", condition: "Needs inspection" }, today).map((bench) => bench.id), ["A-010"]);
+  assert.deepEqual(filterAdminBenches([expired, available], { area: "Parade Ground", photos: "without" }, today).map((bench) => bench.id), ["P-002"]);
+});
+
+test("staff sorting handles numeric, photo, donor, and blank values", () => {
+  const benches = [
+    { ...availableBench(), id: "A-010", number: 10, images: [{}, {}], status: "adopted", adoption: { publicName: "Zara", endDate: "2029-01-01" } },
+    { ...availableBench(), id: "P-002", number: 2, images: [] },
+    { ...availableBench(), id: "L-003", number: 3, images: [{}], status: "adopted", adoption: { publicName: "Avery", endDate: "2028-01-01" } }
+  ];
+  assert.deepEqual(sortAdminBenches(benches, { key: "number", direction: "asc" }).map((bench) => bench.number), [2, 3, 10]);
+  assert.deepEqual(sortAdminBenches(benches, { key: "photos", direction: "desc" }).map((bench) => bench.number), [10, 3, 2]);
+  assert.deepEqual(sortAdminBenches(benches, { key: "donor", direction: "asc" }).map((bench) => bench.number), [3, 10, 2]);
 });
 
 test("adoption validation reports missing and malformed values", () => {

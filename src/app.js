@@ -1,4 +1,4 @@
-import { filterBenches, formatDate, getEffectiveStatus, validateAdoption } from "./domain.js";
+import { filterAdminBenches, filterBenches, formatDate, getAdminStatus, getEffectiveStatus, sortAdminBenches, validateAdoption } from "./domain.js";
 
 const PAGE_SIZE = 12;
 let state = { benches: [], requests: [], meta: {} };
@@ -6,6 +6,10 @@ let filters = { search: "", area: "all", status: "all", photos: "all" };
 let currentPage = 1;
 let viewMode = "card";
 let selectedPhotoBenchId = null;
+let adminFilters = { search: "", area: "all", status: "all", photos: "all", condition: "all" };
+let adminSort = { key: "number", direction: "asc" };
+let adminPage = 1;
+let adminPageSize = 25;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -40,6 +44,10 @@ function statusLabel(bench) {
   if (status === "available") return "Available now";
   if (status === "adopted") return "Currently adopted";
   return "Request pending";
+}
+
+function adminStatusLabel(status) {
+  return { available: "Available", adopted: "Currently adopted", pending: "Request pending", expired: "Expired adoption" }[status] || status;
 }
 
 function renderStats() {
@@ -219,11 +227,66 @@ function renderAdmin() {
     const bench = state.benches.find((item) => item.id === request.benchId);
     return `<article class="request-card"><div><h3>${escapeHtml(request.donorName)} · Bench #${bench?.number ?? "?"}</h3><p>${escapeHtml(request.email)} · submitted ${formatDate(request.submittedAt)}</p></div><div><strong>${request.durationMonths / 12} year${request.durationMonths === 12 ? "" : "s"}</strong><p>${escapeHtml(request.dedication || "No dedication provided")}</p></div><div class="request-actions"><button class="button secondary danger" data-action="reject" data-id="${request.id}">Decline</button><button class="button" data-action="approve" data-id="${request.id}">Approve</button></div></article>`;
   }).join("") : '<div class="quiet-state"><strong>You’re all caught up.</strong><br>No adoption requests need review.</div>';
-  $("#records-body").innerHTML = state.benches.slice(0, 100).map((bench) => {
-    const status = getEffectiveStatus(bench);
-    return `<tr><td><strong>#${bench.number}</strong><br><small>${bench.id}</small></td><td>${escapeHtml(bench.area)}</td><td><span class="status ${status}">${statusLabel(bench)}</span></td><td>${bench.images.length}</td><td>${status === "adopted" ? escapeHtml(bench.adoption?.publicName || "Anonymous donor") : "—"}</td><td>${status === "adopted" ? `${formatDate(bench.adoption?.startDate)} – ${formatDate(bench.adoption?.endDate)}` : "—"}</td></tr>`;
-  }).join("");
+  renderAdminFilterOptions();
+  renderAdminRecords();
   renderPhotoManager();
+}
+
+function renderAdminFilterOptions() {
+  const areaSelect = $("#admin-area-filter");
+  const conditionSelect = $("#admin-condition-filter");
+  const areas = [...new Set(state.benches.map((bench) => bench.area))].sort((a, b) => a.localeCompare(b));
+  const conditions = [...new Set(state.benches.map((bench) => bench.condition))].sort((a, b) => a.localeCompare(b));
+  if (adminFilters.area !== "all" && !areas.includes(adminFilters.area)) adminFilters.area = "all";
+  if (adminFilters.condition !== "all" && !conditions.includes(adminFilters.condition)) adminFilters.condition = "all";
+  areaSelect.innerHTML = `<option value="all">All areas</option>${areas.map((area) => `<option value="${escapeHtml(area)}">${escapeHtml(area)}</option>`).join("")}`;
+  conditionSelect.innerHTML = `<option value="all">All conditions</option>${conditions.map((condition) => `<option value="${escapeHtml(condition)}">${escapeHtml(condition)}</option>`).join("")}`;
+  areaSelect.value = adminFilters.area;
+  conditionSelect.value = adminFilters.condition;
+}
+
+function renderAdminRecords() {
+  const filtered = filterAdminBenches(state.benches, adminFilters);
+  const sorted = sortAdminBenches(filtered, adminSort);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / adminPageSize));
+  adminPage = Math.min(adminPage, totalPages);
+  const start = (adminPage - 1) * adminPageSize;
+  const page = sorted.slice(start, start + adminPageSize);
+  $("#records-count").textContent = sorted.length ? `Showing ${start + 1}–${Math.min(start + adminPageSize, sorted.length)} of ${sorted.length}` : "0 records";
+  $("#records-body").innerHTML = page.length ? page.map((bench) => {
+    const status = getAdminStatus(bench);
+    const hasAdoption = status === "adopted" || status === "expired";
+    return `<tr><td><strong>#${bench.number}</strong><br><small>${bench.id}</small></td><td>${escapeHtml(bench.area)}<br><small>${escapeHtml(bench.condition)}</small></td><td><span class="status ${status}">${adminStatusLabel(status)}</span></td><td>${bench.images.length}</td><td>${hasAdoption ? escapeHtml(bench.adoption?.publicName || "Anonymous donor") : "—"}</td><td>${hasAdoption ? formatDate(bench.adoption?.endDate) : "—"}</td></tr>`;
+  }).join("") : '<tr><td class="table-empty" colspan="6"><strong>No bench records match these filters.</strong><br>Clear one or more filters to broaden the results.</td></tr>';
+  $$('[data-sort-header]').forEach((header) => {
+    const active = header.dataset.sortHeader === adminSort.key;
+    header.setAttribute("aria-sort", active ? (adminSort.direction === "asc" ? "ascending" : "descending") : "none");
+    $(".sort-button span", header).textContent = active ? (adminSort.direction === "asc" ? "↑" : "↓") : "";
+  });
+  renderAdminPagination(totalPages);
+}
+
+function renderAdminPagination(totalPages) {
+  const pagination = $("#admin-pagination");
+  if (totalPages <= 1) { pagination.innerHTML = ""; return; }
+  const pages = [...new Set([1, adminPage - 1, adminPage, adminPage + 1, totalPages].filter((page) => page >= 1 && page <= totalPages))].sort((a, b) => a - b);
+  let previous = 0;
+  pagination.innerHTML = pages.map((page) => {
+    const gap = page - previous > 1 ? '<span aria-hidden="true">…</span>' : "";
+    previous = page;
+    return `${gap}<button class="page-button ${page === adminPage ? "active" : ""}" data-admin-page="${page}" ${page === adminPage ? 'aria-current="page"' : ""} aria-label="Bench records page ${page}">${page}</button>`;
+  }).join("");
+}
+
+function clearAdminFilters() {
+  adminFilters = { search: "", area: "all", status: "all", photos: "all", condition: "all" };
+  adminPage = 1;
+  $("#admin-search").value = "";
+  $("#admin-area-filter").value = "all";
+  $("#admin-status-filter").value = "all";
+  $("#admin-photo-filter").value = "all";
+  $("#admin-condition-filter").value = "all";
+  renderAdminRecords();
 }
 
 function renderPhotoManager() {
@@ -326,11 +389,24 @@ async function initialize() {
     currentPage = 1; renderBenches();
   });
   $("#filters").addEventListener("reset", (event) => { event.preventDefault(); clearFilters(); });
+  $("#admin-record-filters").addEventListener("input", (event) => {
+    if (event.target.id === "admin-search") adminFilters.search = event.target.value;
+    if (event.target.id === "admin-area-filter") adminFilters.area = event.target.value;
+    if (event.target.id === "admin-status-filter") adminFilters.status = event.target.value;
+    if (event.target.id === "admin-photo-filter") adminFilters.photos = event.target.value;
+    if (event.target.id === "admin-condition-filter") adminFilters.condition = event.target.value;
+    adminPage = 1;
+    renderAdminRecords();
+  });
+  $("#admin-record-filters").addEventListener("reset", (event) => { event.preventDefault(); clearAdminFilters(); });
+  $("#admin-page-size").addEventListener("change", (event) => { adminPageSize = Number(event.target.value); adminPage = 1; renderAdminRecords(); });
   document.addEventListener("click", (event) => {
     const route = event.target.closest("[data-route]");
     const action = event.target.closest("[data-action]");
     const view = event.target.closest("[data-view]");
     const page = event.target.closest("[data-page]");
+    const adminPageButton = event.target.closest("[data-admin-page]");
+    const adminSortButton = event.target.closest("[data-admin-sort]");
     const close = event.target.closest("[data-close-dialog]");
     if (route) { event.preventDefault(); switchRoute(route.dataset.route); }
     if (view) {
@@ -339,6 +415,13 @@ async function initialize() {
       renderBenches();
     }
     if (page) { currentPage = Number(page.dataset.page); renderBenches(); $("#browse-heading").scrollIntoView(); }
+    if (adminPageButton) { adminPage = Number(adminPageButton.dataset.adminPage); renderAdminRecords(); $("#records-heading").scrollIntoView(); }
+    if (adminSortButton) {
+      const key = adminSortButton.dataset.adminSort;
+      adminSort = { key, direction: adminSort.key === key && adminSort.direction === "asc" ? "desc" : "asc" };
+      adminPage = 1;
+      renderAdminRecords();
+    }
     if (close) close.closest("dialog")?.close();
     if (!action) return;
     if (action.dataset.action === "details") openBench(action.dataset.id);

@@ -17,6 +17,48 @@ export function filterBenches(benches, { search = "", area = "all", status = "al
   });
 }
 
+export function getAdminStatus(bench, today = new Date()) {
+  if (bench.status === "adopted" && bench.adoption?.endDate) {
+    const end = new Date(`${bench.adoption.endDate}T23:59:59`);
+    if (end < today) return "expired";
+  }
+  return bench.status;
+}
+
+export function filterAdminBenches(benches, { search = "", area = "all", status = "all", photos = "all", condition = "all" }, today = new Date()) {
+  const query = search.trim().toLocaleLowerCase();
+  return benches.filter((bench) => {
+    const haystack = [bench.id, bench.number, bench.area, bench.feature, bench.condition, bench.adoption?.publicName, bench.adoption?.dedication]
+      .filter(Boolean).join(" ").toLocaleLowerCase();
+    return (!query || haystack.includes(query)) &&
+      (area === "all" || bench.area === area) &&
+      (status === "all" || getAdminStatus(bench, today) === status) &&
+      (photos === "all" || (photos === "with" ? Boolean(bench.images?.length) : !bench.images?.length)) &&
+      (condition === "all" || bench.condition === condition);
+  });
+}
+
+export function sortAdminBenches(benches, { key = "number", direction = "asc" }, today = new Date()) {
+  const valueFor = (bench) => {
+    if (key === "number") return bench.number;
+    if (key === "area") return bench.area;
+    if (key === "status") return getAdminStatus(bench, today);
+    if (key === "photos") return bench.images?.length || 0;
+    if (key === "donor") return bench.adoption?.publicName || null;
+    if (key === "term") return bench.adoption?.endDate || null;
+    return bench.number;
+  };
+  return [...benches].sort((left, right) => {
+    const a = valueFor(left);
+    const b = valueFor(right);
+    if (a == null && b == null) return left.number - right.number;
+    if (a == null) return 1;
+    if (b == null) return -1;
+    const comparison = typeof a === "number" ? a - b : String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+    return (direction === "desc" ? -comparison : comparison) || left.number - right.number;
+  });
+}
+
 export function validateAdoption(input) {
   const errors = {};
   const name = input.donorName?.trim();

@@ -30,6 +30,7 @@ npm test
 - Persist all changes in a shared server-side SQLite database at `data/benches.db`.
 - Import the park's real bench inventory from a validated CSV in Staff view.
 - Upload, caption, and remove up to six public photos per bench from Staff view.
+- Search and combine area, lifecycle status, condition, and photo filters across the complete staff directory; sort every operational column and paginate at 25, 50, or 100 rows.
 - Treat expired adoptions as available without mutating their historical record.
 
 ## Product assumptions

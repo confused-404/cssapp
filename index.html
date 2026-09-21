@@ -117,8 +117,25 @@
           </div>
         </section>
         <section class="admin-panel" aria-labelledby="records-heading">
-          <div class="section-heading"><div><p class="eyebrow">Source of truth</p><h2 id="records-heading">Bench records</h2></div></div>
-          <div class="table-wrap"><table><thead><tr><th>Bench</th><th>Area</th><th>Status</th><th>Photos</th><th>Public dedication</th><th>Term</th></tr></thead><tbody id="records-body"></tbody></table></div>
+          <div class="section-heading"><div><p class="eyebrow">Source of truth</p><h2 id="records-heading">Bench records</h2><p class="section-note">Search the full directory, combine filters, and sort by any operational column.</p></div><p id="records-count" class="result-count" aria-live="polite"></p></div>
+          <form id="admin-record-filters" class="admin-record-filters" role="search">
+            <label class="search-field admin-search"><span class="sr-only">Search bench records</span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m21 21-4.3-4.3m2.3-5.2a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg><input id="admin-search" type="search" placeholder="Bench, area, donor, or dedication" autocomplete="off" /></label>
+            <label><span class="sr-only">Filter records by area</span><select id="admin-area-filter"><option value="all">All areas</option></select></label>
+            <label><span class="sr-only">Filter records by status</span><select id="admin-status-filter"><option value="all">All statuses</option><option value="available">Available</option><option value="pending">Request pending</option><option value="adopted">Currently adopted</option><option value="expired">Expired adoption</option></select></label>
+            <label><span class="sr-only">Filter records by photo availability</span><select id="admin-photo-filter"><option value="all">With or without photos</option><option value="with">Has photos</option><option value="without">No photos</option></select></label>
+            <label><span class="sr-only">Filter records by condition</span><select id="admin-condition-filter"><option value="all">All conditions</option></select></label>
+            <button class="button secondary" type="reset">Clear</button>
+          </form>
+          <div class="records-toolbar"><label>Rows per page <select id="admin-page-size"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></label><span>Click a column heading to sort.</span></div>
+          <div class="table-wrap"><table><thead><tr>
+            <th data-sort-header="number" aria-sort="ascending"><button class="sort-button" data-admin-sort="number">Bench <span aria-hidden="true">↑</span></button></th>
+            <th data-sort-header="area" aria-sort="none"><button class="sort-button" data-admin-sort="area">Area <span aria-hidden="true"></span></button></th>
+            <th data-sort-header="status" aria-sort="none"><button class="sort-button" data-admin-sort="status">Status <span aria-hidden="true"></span></button></th>
+            <th data-sort-header="photos" aria-sort="none"><button class="sort-button" data-admin-sort="photos">Photos <span aria-hidden="true"></span></button></th>
+            <th data-sort-header="donor" aria-sort="none"><button class="sort-button" data-admin-sort="donor">Public donor <span aria-hidden="true"></span></button></th>
+            <th data-sort-header="term" aria-sort="none"><button class="sort-button" data-admin-sort="term">Term end <span aria-hidden="true"></span></button></th>
+          </tr></thead><tbody id="records-body"></tbody></table></div>
+          <nav id="admin-pagination" class="pagination" aria-label="Bench record pages"></nav>
         </section>
       </section>
     </main>

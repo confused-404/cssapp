@@ -90,7 +90,7 @@ function rowToBench(row) {
   return {
     id: row.id, number: row.number, area: row.area, feature: row.feature, condition: row.condition, status: row.status,
     adoption: row.status === "adopted" ? {
-      donorName: row.donor_name, publicName: row.public_name || "Anonymous donor", dedication: row.dedication || "",
+      publicName: row.public_name || "Anonymous donor", dedication: row.dedication || "",
       startDate: row.start_date, endDate: row.end_date, durationMonths: row.duration_months
     } : null
   };

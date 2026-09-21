@@ -58,7 +58,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .view-button:last-child { border-right: 0; }
 .view-button.active { background: var(--green-800); color: white; }
 .filters { display: grid; grid-template-columns: minmax(230px, 1fr) 190px 165px 145px auto; gap: .7rem; margin-bottom: 2rem; }
-.filters input, .filters select, .form-field input, .form-field select, .form-field textarea { width: 100%; min-height: 46px; border: 1px solid var(--line); border-radius: 9px; padding: .7rem .8rem; background: var(--paper); color: var(--ink); }
+.filters input, .filters select, .admin-record-filters input, .admin-record-filters select, .form-field input, .form-field select, .form-field textarea { width: 100%; min-height: 46px; border: 1px solid var(--line); border-radius: 9px; padding: .7rem .8rem; background: var(--paper); color: var(--ink); }
 .search-field { position: relative; }
 .search-field svg { position: absolute; left: .85rem; top: 50%; width: 19px; fill: none; stroke: var(--muted); stroke-linecap: round; stroke-width: 2; transform: translateY(-50%); }
 .search-field input { padding-left: 2.6rem; }
@@ -92,6 +92,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .status::before { width: .45rem; height: .45rem; flex: 0 0 auto; border-radius: 50%; background: currentColor; content: ""; }
 .status.adopted { background: #46576d; color: white; }
 .status.pending { background: #a85f08; color: white; }
+.status.expired { background: var(--red); color: white; }
 .bench-card-body { flex: 1; display: flex; flex-direction: column; padding: 1.2rem; }
 .bench-card h3 { margin: 0; font-family: Georgia, serif; font-size: 1.35rem; font-weight: 500; }
 .bench-feature { margin: .25rem 0 1rem; color: var(--muted); font-size: .84rem; }
@@ -150,11 +151,20 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .request-card p { margin: .2rem 0 0; color: var(--muted); font-size: .84rem; }
 .request-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .quiet-state { border: 1px dashed var(--line); border-radius: var(--radius); padding: 2rem; color: var(--muted); text-align: center; }
+.admin-record-filters { display: grid; grid-template-columns: minmax(250px, 1.4fr) repeat(4, minmax(135px, .7fr)) auto; gap: .65rem; margin-bottom: .8rem; }
+.records-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .7rem; color: var(--muted); font-size: .75rem; }
+.records-toolbar label { display: flex; align-items: center; gap: .5rem; font-weight: 700; }
+.records-toolbar select { min-height: 34px; border: 1px solid var(--line); border-radius: 7px; padding: .3rem 1.8rem .3rem .55rem; background: var(--paper); color: var(--ink); }
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
 table { width: 100%; border-collapse: collapse; font-size: .86rem; }
 th, td { padding: .85rem 1rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
 th { color: var(--muted); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; }
 tbody tr:last-child td { border-bottom: 0; }
+tbody tr:hover { background: #f5f7f3; }
+.sort-button { display: inline-flex; align-items: center; gap: .35rem; border: 0; padding: 0; background: none; color: inherit; cursor: pointer; font: inherit; font-weight: 800; letter-spacing: inherit; text-transform: inherit; white-space: nowrap; }
+.sort-button:hover { color: var(--green-800); }
+.sort-button span { min-width: 1em; color: var(--green-700); font-size: .9rem; }
+.table-empty { padding: 3rem 1rem; color: var(--muted); text-align: center; }
 
 .dialog { width: min(620px, calc(100% - 2rem)); max-height: calc(100vh - 2rem); overflow: auto; border: 0; border-radius: 18px; padding: 0; background: var(--paper); color: var(--ink); box-shadow: 0 30px 100px rgb(0 0 0 / 28%); }
 .dialog::backdrop { background: rgb(10 22 16 / 70%); backdrop-filter: blur(3px); }
@@ -208,6 +218,8 @@ tbody tr:last-child td { border-bottom: 0; }
   .import-panel { grid-template-columns: 1fr; }
   .photo-upload-form { grid-template-columns: 1fr 1fr; }
   .photo-upload-form .button { margin-bottom: 0; }
+  .admin-record-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-search { grid-column: 1 / -1; }
 }
 
 @media (max-width: 580px) {
@@ -233,6 +245,9 @@ tbody tr:last-child td { border-bottom: 0; }
   .import-actions { flex-direction: column; }
   .photo-upload-form, .staff-photo-list { grid-template-columns: 1fr; }
   .gallery-thumbs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .admin-record-filters { grid-template-columns: 1fr; }
+  .admin-search { grid-column: auto; }
+  .records-toolbar { align-items: flex-start; flex-direction: column; }
 }
 
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition: none !important; } }
