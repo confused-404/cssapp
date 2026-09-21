@@ -155,4 +155,5 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(PORT, "127.0.0.1", () => console.log(`Bench Adoption running at http://localhost:${PORT}`));
+const HOST = process.env.HOST || "0.0.0.0";
+server.listen(PORT, HOST, () => console.log(`Bench Adoption running at http://${HOST}:${PORT}`));
