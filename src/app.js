@@ -227,6 +227,7 @@ async function submitAdoption(form, benchId) {
 function renderAdmin() {
   $("#admin-email").textContent = currentAdmin?.email || "";
   const pending = state.requests.filter((request) => request.status === "pending").sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
+  $("#pending-request-count").textContent = pending.length;
   $("#request-list").innerHTML = pending.length ? pending.map((request) => {
     const bench = state.benches.find((item) => item.id === request.benchId);
     return `<article class="request-card"><div><h3>${escapeHtml(request.donorName)} · Bench #${bench?.number ?? "?"}</h3><p>${escapeHtml(request.email)} · submitted ${formatDate(request.submittedAt)}</p></div><div><strong>${request.durationMonths / 12} year${request.durationMonths === 12 ? "" : "s"}</strong><p>${escapeHtml(request.dedication || "No dedication provided")}</p></div><div class="request-actions"><button class="button secondary danger" data-action="reject" data-id="${request.id}">Decline</button><button class="button" data-action="approve" data-id="${request.id}">Approve</button></div></article>`;
@@ -392,6 +393,10 @@ function clearFilters() {
   renderBenches();
 }
 
+function updateBackToTop() {
+  $("#back-to-top").hidden = window.scrollY < 500;
+}
+
 function renderAll() { renderAreaOptions(); renderStats(); renderBenches(); renderAdmin(); }
 
 async function importInventory(event) {
@@ -491,6 +496,12 @@ async function initialize() {
   $("#photo-upload-form").addEventListener("submit", uploadPhoto);
   $("#photo-bench-select").addEventListener("change", (event) => { selectedPhotoBenchId = event.target.value; renderPhotoManager(); });
   $("#download-template").addEventListener("click", downloadTemplate);
+  $("#back-to-top").addEventListener("click", () => {
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    window.scrollTo({ top: 0, behavior });
+  });
+  window.addEventListener("scroll", updateBackToTop, { passive: true });
+  updateBackToTop();
   [$("#bench-dialog"), $("#adoption-dialog"), $("#confirm-dialog")].forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
   try { viewMode = window.localStorage.getItem("bench-directory-view") === "list" ? "list" : "card"; } catch {}
   try {

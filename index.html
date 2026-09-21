@@ -130,10 +130,13 @@
             <div class="import-actions"><button id="download-template" class="button secondary" type="button">Download template</button><button class="button" type="submit">Import inventory</button></div>
           </form>
         </section>
-        <section class="admin-panel" aria-labelledby="requests-heading">
-          <div class="section-heading"><div><p class="eyebrow">Needs attention</p><h2 id="requests-heading">Pending requests</h2></div></div>
+        <details class="admin-panel request-panel" open>
+          <summary class="request-panel-summary">
+            <div><p class="eyebrow">Needs attention</p><h2 id="requests-heading">Pending requests <span id="pending-request-count" class="request-count">0</span></h2></div>
+            <span class="request-panel-action" aria-hidden="true"><span class="request-panel-action-label"></span><span class="request-panel-chevron">⌄</span></span>
+          </summary>
           <div id="request-list" class="request-list"></div>
-        </section>
+        </details>
         <section class="admin-panel" aria-labelledby="photos-heading">
           <div class="section-heading"><div><p class="eyebrow">Public gallery</p><h2 id="photos-heading">Bench photos</h2><p class="section-note">Add up to six photos showing the bench and its surroundings. Images appear only inside bench details.</p></div></div>
           <div class="photo-manager">
@@ -179,6 +182,7 @@
         <div class="form-actions"><button class="button secondary" value="cancel">Cancel</button><button id="confirm-reset" class="button danger" value="confirm">Reset data</button></div>
       </form>
     </dialog>
+    <button id="back-to-top" class="back-to-top" type="button" hidden aria-label="Back to top"><span aria-hidden="true">↑</span> Back to top</button>
     <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
     <script type="module" src="src/app.js"></script>
   </body>
