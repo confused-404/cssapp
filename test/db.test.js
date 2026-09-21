@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getState, importInventory, openDatabase, reviewRequest, submitRequest } from "../src/db.js";
+import { addBenchImage, deleteBenchImage, getBenchImage, getState, importInventory, openDatabase, reviewRequest, submitRequest } from "../src/db.js";
 
 const inventory = `bench_id,number,area,feature,condition,status,donor_name,public_name,dedication,start_date,end_date,duration_months
 REAL-01,1,Van Cortlandt Lake,Lake views,Good,available,,,,,,
@@ -17,6 +17,14 @@ test("imported inventory becomes the live source of truth", () => {
   db.close();
 });
 
+test("an empty database is automatically populated before reads", () => {
+  const db = openDatabase(":memory:");
+  const state = getState(db);
+  assert.ok(state.benches.length > 0);
+  assert.equal(state.meta.data_source, "demo");
+  db.close();
+});
+
 test("request and approval update the same persisted bench record", () => {
   const db = openDatabase(":memory:");
   importInventory(db, inventory);
@@ -28,5 +36,18 @@ test("request and approval update the same persisted bench record", () => {
   assert.equal(bench.status, "adopted");
   assert.equal(bench.adoption.publicName, "Anonymous donor");
   assert.equal(bench.adoption.endDate, "2027-09-22");
+  db.close();
+});
+
+test("bench images are stored, listed without blobs, and removed", () => {
+  const db = openDatabase(":memory:");
+  importInventory(db, inventory);
+  const image = addBenchImage(db, "REAL-01", { data: Buffer.from([0xff, 0xd8, 0xff]), contentType: "image/jpeg", filename: "lake.jpg", caption: "View toward the lake" });
+  const publicImage = getState(db).benches[0].images[0];
+  assert.equal(publicImage.caption, "View toward the lake");
+  assert.equal(publicImage.url, `/api/images/${image.id}`);
+  assert.equal(getBenchImage(db, image.id).image_data.length, 3);
+  deleteBenchImage(db, "REAL-01", image.id);
+  assert.equal(getState(db).benches[0].images.length, 0);
   db.close();
 });

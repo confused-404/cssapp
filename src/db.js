@@ -5,6 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { createSeedData } from "./data.js";
 import { parseBenchInventory } from "./csv.js";
 import { validateAdoption } from "./domain.js";
+import { MAX_IMAGES_PER_BENCH } from "./images.js";
 
 export function openDatabase(filename) {
   if (filename !== ":memory:") mkdirSync(dirname(filename), { recursive: true });
@@ -93,7 +94,7 @@ export function getState(db) {
 export function addBenchImage(db, benchId, { data, contentType, filename, caption = "" }, now = new Date()) {
   if (!db.prepare("SELECT 1 FROM benches WHERE id=?").get(benchId)) throw Object.assign(new Error("That bench could not be found."), { statusCode: 404 });
   const count = db.prepare("SELECT COUNT(*) AS count FROM bench_images WHERE bench_id=?").get(benchId).count;
-  if (count >= 6) throw Object.assign(new Error("A bench can have up to six photos."), { statusCode: 409 });
+  if (count >= MAX_IMAGES_PER_BENCH) throw Object.assign(new Error(`A bench can have up to ${MAX_IMAGES_PER_BENCH} photos.`), { statusCode: 409 });
   if (!data?.length) throw Object.assign(new Error("Choose an image to upload."), { statusCode: 400 });
   if (caption.length > 160) throw Object.assign(new Error("Image captions must be 160 characters or fewer."), { statusCode: 400 });
   const id = `IMG-${randomUUID()}`;

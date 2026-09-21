@@ -37,6 +37,7 @@ export function parseBenchInventory(text) {
     const number = Number(record.number);
     const status = record.status?.toLocaleLowerCase() || "available";
     if (!record.bench_id) throw new Error(`Row ${line}: bench_id is required.`);
+    if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,49}$/.test(record.bench_id)) throw new Error(`Row ${line}: bench_id may contain only letters, numbers, hyphens, and underscores.`);
     if (seen.has(record.bench_id)) throw new Error(`Row ${line}: duplicate bench_id ${record.bench_id}.`);
     if (!Number.isInteger(number) || number < 1) throw new Error(`Row ${line}: number must be a positive whole number.`);
     if (seenNumbers.has(number)) throw new Error(`Row ${line}: duplicate bench number ${number}.`);

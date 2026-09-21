@@ -1,3 +1,5 @@
+// Server-only first-run seed. These records are inserted into SQLite when the
+// benches table is empty; the browser never imports or reads this module.
 const AREAS = [
   { name: "Van Cortlandt Lake", feature: "Lake views", prefix: "L" },
   { name: "Parade Ground", feature: "Open lawn", prefix: "P" },

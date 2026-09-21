@@ -19,13 +19,16 @@ npm test
 ## What works
 
 - Browse all 520 seeded bench records, search by bench/area, filter, and paginate.
+- Switch between a visual card directory and a compact scanning list; the preference is remembered per browser.
 - See whether a bench is available, adopted, or held for a pending request.
 - See the public donor name, dedication, and adoption end date for adopted benches.
+- View an optional photo gallery for the bench and surrounding area.
 - Submit an adoption request with inline validation and an explicit privacy choice.
 - Prevent a second request once a bench is held.
 - Review, approve, or decline pending requests in the staff view.
 - Persist all changes in a shared server-side SQLite database at `data/benches.db`.
 - Import the park's real bench inventory from a validated CSV in Staff view.
+- Upload, caption, and remove up to six public photos per bench from Staff view.
 - Treat expired adoptions as available without mutating their historical record.
 
 ## Product assumptions
@@ -48,7 +51,8 @@ styles.css          Responsive visual system
 server.js           Static server and JSON API
 src/db.js           SQLite schema, transactions, and queries
 src/csv.js          Validated real-inventory import
-src/data.js         Clearly labeled 520-bench evaluation seed
+src/data.js         Server-only first-run seed inserted into SQLite
+src/images.js       Image limits and content-signature validation
 src/domain.js       Pure business rules and date/status logic
 src/app.js          Rendering and browser interaction
 test/               Domain, CSV, and database integration tests
@@ -58,7 +62,7 @@ The business rules are kept out of the DOM code and server writes use SQLite tra
 
 ## Data provenance
 
-No official Van Cortlandt Park bench inventory was supplied with the prompt. The app therefore starts with a deterministic, visibly labeled **demo dataset** so reviewers can exercise the full workflow; it does not claim those records are real.
+No official Van Cortlandt Park bench inventory was supplied with the prompt. When the database has no bench rows, the server automatically inserts a deterministic, visibly labeled **demo dataset** into SQLite so reviewers can exercise the full workflow; it does not claim those records are real. The browser never imports seed records: all public and staff views read the database through `/api/state`.
 
 To load live inventory, open **Staff view → Import real bench data**, download the template, and upload a completed CSV. Importing atomically replaces the directory, clears requests tied to the previous inventory, and records the source filename and timestamp. From that point forward, the public directory, new adoption requests, and staff decisions all read and write `data/benches.db` through the API.
 
@@ -74,6 +78,7 @@ Required CSV columns are `bench_id`, `number`, and `area`. Optional supported co
 - Anonymous public attribution.
 - Expired terms becoming available.
 - Invalid inventory files rejected before replacing live records.
+- Non-image uploads, files over 5 MB, captions over 160 characters, and a seventh photo rejected server-side.
 - API/network failure messaging.
 - Destructive demo reset requires confirmation.
 

@@ -38,7 +38,13 @@
               <p class="eyebrow">Bench directory</p>
               <h2 id="browse-heading">Choose your spot</h2>
             </div>
-            <p id="result-count" class="result-count" aria-live="polite"></p>
+            <div class="directory-tools">
+              <p id="result-count" class="result-count" aria-live="polite"></p>
+              <div class="view-toggle" role="group" aria-label="Directory view">
+                <button class="view-button active" type="button" data-view="card" aria-pressed="true"><span aria-hidden="true">▦</span> Cards</button>
+                <button class="view-button" type="button" data-view="list" aria-pressed="false"><span aria-hidden="true">☷</span> List</button>
+              </div>
+            </div>
           </div>
           <form id="filters" class="filters" role="search">
             <label class="search-field">
@@ -90,9 +96,21 @@
           <div class="section-heading"><div><p class="eyebrow">Needs attention</p><h2 id="requests-heading">Pending requests</h2></div></div>
           <div id="request-list" class="request-list"></div>
         </section>
+        <section class="admin-panel" aria-labelledby="photos-heading">
+          <div class="section-heading"><div><p class="eyebrow">Public gallery</p><h2 id="photos-heading">Bench photos</h2><p class="section-note">Add up to six photos showing the bench and its surroundings. Images appear only inside bench details.</p></div></div>
+          <div class="photo-manager">
+            <form id="photo-upload-form" class="photo-upload-form">
+              <label class="form-field"><span>Bench</span><select id="photo-bench-select" required></select></label>
+              <label class="form-field"><span>Photo</span><input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required /><span class="field-hint">JPEG, PNG, WebP, or GIF · maximum 5 MB</span></label>
+              <label class="form-field"><span>Caption <span class="field-hint">(optional)</span></span><input id="photo-caption" maxlength="160" placeholder="Lake view beside the bench" /></label>
+              <button class="button" type="submit">Add photo</button>
+            </form>
+            <div id="staff-photo-list" class="staff-photo-list"></div>
+          </div>
+        </section>
         <section class="admin-panel" aria-labelledby="records-heading">
           <div class="section-heading"><div><p class="eyebrow">Source of truth</p><h2 id="records-heading">Bench records</h2></div></div>
-          <div class="table-wrap"><table><thead><tr><th>Bench</th><th>Area</th><th>Status</th><th>Public dedication</th><th>Term</th></tr></thead><tbody id="records-body"></tbody></table></div>
+          <div class="table-wrap"><table><thead><tr><th>Bench</th><th>Area</th><th>Status</th><th>Photos</th><th>Public dedication</th><th>Term</th></tr></thead><tbody id="records-body"></tbody></table></div>
         </section>
       </section>
     </main>

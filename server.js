@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { addBenchImage, deleteBenchImage, getBenchImage, getState, importInventory, openDatabase, reviewRequest, seedDemo, submitRequest } from "./src/db.js";
+import { detectImageType, MAX_IMAGE_BYTES } from "./src/images.js";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
 const PORT = Number(process.env.PORT) || 4173;
@@ -26,14 +27,6 @@ async function readBuffer(request, limit = 2_000_000) {
 }
 
 async function readBody(request, limit) { return (await readBuffer(request, limit)).toString("utf8"); }
-
-function detectImageType(data) {
-  if (data.length >= 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) return "image/jpeg";
-  if (data.length >= 8 && data.subarray(0, 8).equals(Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]))) return "image/png";
-  if (data.length >= 12 && data.subarray(0, 4).toString() === "RIFF" && data.subarray(8, 12).toString() === "WEBP") return "image/webp";
-  if (data.length >= 6 && ["GIF87a", "GIF89a"].includes(data.subarray(0, 6).toString())) return "image/gif";
-  return null;
-}
 
 async function api(request, response, url) {
   if (request.method === "GET" && url.pathname === "/api/state") return json(response, 200, getState(db));
@@ -60,7 +53,7 @@ async function api(request, response, url) {
   }
   const uploadMatch = url.pathname.match(/^\/api\/admin\/benches\/([^/]+)\/images$/);
   if (request.method === "POST" && uploadMatch) {
-    const data = await readBuffer(request, 5_000_000);
+    const data = await readBuffer(request, MAX_IMAGE_BYTES);
     const contentType = detectImageType(data);
     if (!contentType) throw Object.assign(new Error("Upload a JPEG, PNG, WebP, or GIF image."), { statusCode: 415 });
     const image = addBenchImage(db, decodeURIComponent(uploadMatch[1]), {

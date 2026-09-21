@@ -4,6 +4,8 @@ const PAGE_SIZE = 12;
 let state = { benches: [], requests: [], meta: {} };
 let filters = { search: "", area: "all", status: "all" };
 let currentPage = 1;
+let viewMode = "card";
+let selectedPhotoBenchId = null;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -70,6 +72,12 @@ function renderBenches() {
   const start = (currentPage - 1) * PAGE_SIZE;
   const page = matches.slice(start, start + PAGE_SIZE);
   $("#result-count").textContent = matches.length ? `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, matches.length)} of ${matches.length}` : "0 benches";
+  $("#bench-grid").classList.toggle("list-view", viewMode === "list");
+  $$('[data-view]').forEach((button) => {
+    const active = button.dataset.view === viewMode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
   $("#bench-grid").innerHTML = page.map((bench) => {
     const status = getEffectiveStatus(bench);
     const note = status === "adopted" && bench.adoption
@@ -77,12 +85,22 @@ function renderBenches() {
       : status === "pending" ? `<p class="dedication">An adoption request is being reviewed.</p>` : "";
     return `<article class="bench-card">
       <div class="bench-card-top"><div><p class="bench-number">#${bench.number}</p><span class="bench-id">${bench.id}</span></div><span class="status ${status}">${statusLabel(bench)}</span></div>
-      <div class="bench-card-body"><h3>${escapeHtml(bench.area)}</h3><p class="bench-feature">${escapeHtml(bench.feature)}</p>${note}<button class="link-button" data-action="details" data-id="${bench.id}">View bench details</button></div>
+      <div class="bench-card-body"><div class="bench-summary"><h3>${escapeHtml(bench.area)}</h3><p class="bench-feature">${escapeHtml(bench.feature)}</p>${bench.images.length ? `<span class="photo-count" aria-label="${bench.images.length} photos">▧ ${bench.images.length} photo${bench.images.length === 1 ? "" : "s"}</span>` : ""}</div><div class="list-note">${note}</div><button class="link-button" data-action="details" data-id="${bench.id}">View bench details</button></div>
     </article>`;
   }).join("");
   $("#bench-grid").hidden = page.length === 0;
   $("#empty-state").hidden = page.length !== 0;
   renderPagination(totalPages);
+}
+
+function galleryMarkup(bench) {
+  if (!bench.images.length) return "";
+  const first = bench.images[0];
+  const alt = first.caption || `Bench #${bench.number} and the surrounding ${bench.area} area`;
+  return `<figure class="bench-gallery">
+    <div class="gallery-main"><img id="gallery-main-image" src="${first.url}" alt="${escapeHtml(alt)}" /><figcaption id="gallery-caption" ${first.caption ? "" : "hidden"}>${escapeHtml(first.caption)}</figcaption></div>
+    ${bench.images.length > 1 ? `<div class="gallery-thumbs" aria-label="Bench photo gallery">${bench.images.map((image, index) => `<button class="gallery-thumb ${index === 0 ? "active" : ""}" data-action="gallery-photo" data-bench-id="${bench.id}" data-image-id="${image.id}" aria-label="View photo ${index + 1}" aria-pressed="${index === 0}"><img src="${image.url}" alt="" /></button>`).join("")}</div>` : ""}
+  </figure>`;
 }
 
 function renderPagination(totalPages) {
@@ -104,6 +122,7 @@ function openBench(benchId) {
   const adoption = status === "adopted" ? `<div class="dedication-block"><blockquote>“${escapeHtml(bench.adoption?.dedication || "This bench was adopted in support of the park.")}”</blockquote><cite>${escapeHtml(bench.adoption?.publicName || "Anonymous donor")} · through ${formatDate(bench.adoption?.endDate)}</cite></div>` : "";
   $("#bench-dialog-content").innerHTML = `<div class="dialog-card">
     <div class="dialog-header"><div><p class="eyebrow">Bench ${bench.id}</p><h2>Bench #${bench.number}</h2></div><button class="icon-button" data-close-dialog aria-label="Close">×</button></div>
+    ${galleryMarkup(bench)}
     <span class="status ${status}">${statusLabel(bench)}</span>
     <div class="detail-grid"><div class="detail-item"><small>Park area</small><strong>${escapeHtml(bench.area)}</strong></div><div class="detail-item"><small>Nearby</small><strong>${escapeHtml(bench.feature)}</strong></div><div class="detail-item"><small>Condition</small><strong>${escapeHtml(bench.condition)}</strong></div><div class="detail-item"><small>Record ID</small><strong>${bench.id}</strong></div></div>
     ${adoption}
@@ -111,6 +130,19 @@ function openBench(benchId) {
     <div class="form-actions"><button class="button secondary" data-close-dialog>Close</button>${status === "available" ? `<button class="button" data-action="adopt" data-id="${bench.id}">Adopt this bench</button>` : ""}</div>
   </div>`;
   $("#bench-dialog").showModal();
+}
+
+function showGalleryImage(benchId, imageId, button) {
+  const bench = state.benches.find((item) => item.id === benchId);
+  const image = bench?.images.find((item) => item.id === imageId);
+  if (!image) return;
+  const main = $("#gallery-main-image");
+  const caption = $("#gallery-caption");
+  main.src = image.url;
+  main.alt = image.caption || `Bench #${bench.number} and the surrounding ${bench.area} area`;
+  caption.textContent = image.caption;
+  caption.hidden = !image.caption;
+  $$(".gallery-thumb").forEach((thumb) => { thumb.classList.toggle("active", thumb === button); thumb.setAttribute("aria-pressed", String(thumb === button)); });
 }
 
 function openAdoptionForm(benchId) {
@@ -186,8 +218,50 @@ function renderAdmin() {
   }).join("") : '<div class="quiet-state"><strong>You’re all caught up.</strong><br>No adoption requests need review.</div>';
   $("#records-body").innerHTML = state.benches.slice(0, 100).map((bench) => {
     const status = getEffectiveStatus(bench);
-    return `<tr><td><strong>#${bench.number}</strong><br><small>${bench.id}</small></td><td>${escapeHtml(bench.area)}</td><td><span class="status ${status}">${status}</span></td><td>${status === "adopted" ? escapeHtml(bench.adoption?.publicName || "Anonymous donor") : "—"}</td><td>${status === "adopted" ? `${formatDate(bench.adoption?.startDate)} – ${formatDate(bench.adoption?.endDate)}` : "—"}</td></tr>`;
+    return `<tr><td><strong>#${bench.number}</strong><br><small>${bench.id}</small></td><td>${escapeHtml(bench.area)}</td><td><span class="status ${status}">${status}</span></td><td>${bench.images.length}</td><td>${status === "adopted" ? escapeHtml(bench.adoption?.publicName || "Anonymous donor") : "—"}</td><td>${status === "adopted" ? `${formatDate(bench.adoption?.startDate)} – ${formatDate(bench.adoption?.endDate)}` : "—"}</td></tr>`;
   }).join("");
+  renderPhotoManager();
+}
+
+function renderPhotoManager() {
+  if (!state.benches.length) {
+    $("#photo-bench-select").innerHTML = "";
+    $("#staff-photo-list").innerHTML = '<div class="quiet-state">Import a bench inventory before adding photos.</div>';
+    return;
+  }
+  if (!selectedPhotoBenchId || !state.benches.some((bench) => bench.id === selectedPhotoBenchId)) selectedPhotoBenchId = state.benches[0].id;
+  const select = $("#photo-bench-select");
+  select.innerHTML = state.benches.map((bench) => `<option value="${bench.id}">#${bench.number} · ${escapeHtml(bench.area)} (${bench.id})</option>`).join("");
+  select.value = selectedPhotoBenchId;
+  const bench = state.benches.find((item) => item.id === selectedPhotoBenchId);
+  $("#staff-photo-list").innerHTML = bench.images.length ? bench.images.map((image) => `<article class="staff-photo"><img src="${image.url}" alt="${escapeHtml(image.caption || `Bench #${bench.number} photo`)}" /><div class="staff-photo-info"><p title="${escapeHtml(image.caption || image.filename)}">${escapeHtml(image.caption || image.filename)}</p><button class="link-button" data-action="delete-photo" data-bench-id="${bench.id}" data-image-id="${image.id}">Remove</button></div></article>`).join("") : '<div class="quiet-state"><strong>No photos yet.</strong><br>Add a photo to help people understand this location.</div>';
+  const submit = $("#photo-upload-form button[type='submit']");
+  submit.disabled = bench.images.length >= 6;
+  submit.textContent = bench.images.length >= 6 ? "Six-photo limit reached" : "Add photo";
+}
+
+async function uploadPhoto(event) {
+  event.preventDefault();
+  const file = $("#photo-file").files[0];
+  const caption = $("#photo-caption").value.trim();
+  if (!file) return toast("Choose a photo to upload.", "error");
+  if (file.size > 5_000_000) return toast("That photo is larger than 5 MB.", "error");
+  try {
+    const query = new URLSearchParams({ filename: file.name, caption });
+    await apiFetch(`/api/admin/benches/${encodeURIComponent(selectedPhotoBenchId)}/images?${query}`, { method: "POST", headers: { "content-type": file.type || "application/octet-stream" }, body: file });
+    await refreshState();
+    event.target.reset();
+    toast("Photo added to the public gallery.");
+  } catch (error) { toast(error.message, "error"); }
+}
+
+async function deletePhoto(benchId, imageId) {
+  if (!window.confirm("Remove this photo from the public gallery?")) return;
+  try {
+    await apiFetch(`/api/admin/benches/${encodeURIComponent(benchId)}/images/${encodeURIComponent(imageId)}`, { method: "DELETE" });
+    await refreshState();
+    toast("Photo removed.");
+  } catch (error) { toast(error.message, "error"); }
 }
 
 async function reviewRequest(requestId, decision) {
@@ -248,9 +322,15 @@ async function initialize() {
   document.addEventListener("click", (event) => {
     const route = event.target.closest("[data-route]");
     const action = event.target.closest("[data-action]");
+    const view = event.target.closest("[data-view]");
     const page = event.target.closest("[data-page]");
     const close = event.target.closest("[data-close-dialog]");
     if (route) { event.preventDefault(); switchRoute(route.dataset.route); }
+    if (view) {
+      viewMode = view.dataset.view;
+      try { window.localStorage.setItem("bench-directory-view", viewMode); } catch {}
+      renderBenches();
+    }
     if (page) { currentPage = Number(page.dataset.page); renderBenches(); $("#browse-heading").scrollIntoView(); }
     if (close) close.closest("dialog")?.close();
     if (!action) return;
@@ -258,6 +338,8 @@ async function initialize() {
     if (action.dataset.action === "adopt") openAdoptionForm(action.dataset.id);
     if (action.dataset.action === "clear-filters") clearFilters();
     if (action.dataset.action === "approve" || action.dataset.action === "reject") reviewRequest(action.dataset.id, action.dataset.action);
+    if (action.dataset.action === "gallery-photo") showGalleryImage(action.dataset.benchId, action.dataset.imageId, action);
+    if (action.dataset.action === "delete-photo") deletePhoto(action.dataset.benchId, action.dataset.imageId);
   });
   $("#adoption-dialog").addEventListener("input", (event) => {
     if (event.target.id === "dedication") $("#char-count").textContent = event.target.value.length;
@@ -270,8 +352,11 @@ async function initialize() {
   $("#reset-demo").addEventListener("click", () => $("#confirm-dialog").showModal());
   $("#confirm-reset").addEventListener("click", async () => { try { await apiFetch("/api/admin/reset-demo", { method: "POST" }); await refreshState(); toast("Demo data was reset."); } catch (error) { toast(error.message, "error"); } });
   $("#import-form").addEventListener("submit", importInventory);
+  $("#photo-upload-form").addEventListener("submit", uploadPhoto);
+  $("#photo-bench-select").addEventListener("change", (event) => { selectedPhotoBenchId = event.target.value; renderPhotoManager(); });
   $("#download-template").addEventListener("click", downloadTemplate);
   [$("#bench-dialog"), $("#adoption-dialog"), $("#confirm-dialog")].forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
+  try { viewMode = window.localStorage.getItem("bench-directory-view") === "list" ? "list" : "card"; } catch {}
   try { await refreshState(); }
   catch (error) {
     $("#bench-grid").innerHTML = `<div class="quiet-state"><strong>We couldn’t load the bench directory.</strong><br>${escapeHtml(error.message)} Refresh the page to try again.</div>`;
