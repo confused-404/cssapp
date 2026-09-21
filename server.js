@@ -68,7 +68,8 @@ async function api(request, response, url) {
   }
   if (request.method === "POST" && url.pathname === "/api/admin/reset-demo") {
     seedDemo(db);
-    return json(response, 200, { ok: true });
+    const state = getState(db);
+    return json(response, 200, { ok: true, pendingRequests: state.requests.filter((item) => item.status === "pending").length });
   }
   return json(response, 404, { error: "API endpoint not found." });
 }

@@ -80,6 +80,8 @@ export function seedDemo(db) {
     db.exec("DELETE FROM requests; DELETE FROM benches;");
     seed.benches.forEach((bench) => insertBench(db, bench));
     seed.requests.forEach((request) => insertRequest(db, request));
+    assertDemoRequestIntegrity(db);
+    setMeta(db, "demo_requests_reconciled_at", new Date().toISOString());
     setMeta(db, "stock_images_seeded", "0");
     seedStockImages(db);
     setMeta(db, "data_source", "demo");
@@ -103,7 +105,19 @@ function ensureDemoPendingRequests(db) {
       durationMonths: 12, dedication: "Demo adoption request", showName: false, status: "pending", submittedAt: new Date().toISOString()
     });
   }
+  assertDemoRequestIntegrity(db);
   setMeta(db, "demo_requests_reconciled_at", new Date().toISOString());
+}
+
+function assertDemoRequestIntegrity(db) {
+  const mismatches = db.prepare(`SELECT COUNT(*) AS count FROM (
+    SELECT b.id, b.status, SUM(CASE WHEN r.status='pending' THEN 1 ELSE 0 END) AS pending_requests
+    FROM benches b LEFT JOIN requests r ON r.bench_id=b.id
+    GROUP BY b.id, b.status
+    HAVING (b.status='pending' AND pending_requests != 1)
+      OR (b.status!='pending' AND pending_requests != 0)
+  )`).get().count;
+  if (mismatches) throw new Error(`Demo request integrity check failed for ${mismatches} bench record${mismatches === 1 ? "" : "s"}.`);
 }
 
 function seedStockImages(db) {

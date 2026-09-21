@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addBenchImage, deleteBenchImage, getBenchImage, getState, importInventory, openDatabase, reviewRequest, submitRequest } from "../src/db.js";
+import { addBenchImage, deleteBenchImage, getBenchImage, getState, importInventory, openDatabase, reviewRequest, seedDemo, submitRequest } from "../src/db.js";
 
 const inventory = `bench_id,number,area,feature,condition,status,donor_name,public_name,dedication,start_date,end_date,duration_months
 REAL-01,1,Van Cortlandt Lake,Lake views,Good,available,,,,,,
@@ -27,6 +27,19 @@ test("an empty database is automatically populated before reads", () => {
   const pendingBenches = state.benches.filter((bench) => bench.status === "pending");
   const pendingRequests = state.requests.filter((request) => request.status === "pending");
   assert.ok(pendingBenches.length > 0);
+  assert.equal(pendingRequests.length, pendingBenches.length);
+  assert.deepEqual(new Set(pendingRequests.map((request) => request.benchId)), new Set(pendingBenches.map((bench) => bench.id)));
+  db.close();
+});
+
+test("resetting demo data atomically restores pending benches and requests", () => {
+  const db = openDatabase(":memory:");
+  db.exec("DELETE FROM requests");
+  assert.equal(getState(db).requests.length, 0);
+  seedDemo(db);
+  const state = getState(db);
+  const pendingBenches = state.benches.filter((bench) => bench.status === "pending");
+  const pendingRequests = state.requests.filter((request) => request.status === "pending");
   assert.equal(pendingRequests.length, pendingBenches.length);
   assert.deepEqual(new Set(pendingRequests.map((request) => request.benchId)), new Set(pendingBenches.map((bench) => bench.id)));
   db.close();
