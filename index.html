@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Find and adopt a bench in Van Cortlandt Park." />
+    <title>Van Cortlandt Park Bench Adoption</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <a class="brand" href="#" data-route="browse" aria-label="Bench Adoption home">
+        <span class="brand-mark" aria-hidden="true">VCP</span>
+        <span><strong>Bench Adoption</strong><small>Van Cortlandt Park</small></span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <button class="nav-link active" data-route="browse">Find a bench</button>
+        <button class="nav-link" data-route="admin">Staff view</button>
+      </nav>
+    </header>
+    <div id="data-banner" class="data-banner" hidden></div>
+
+    <main id="main">
+      <section id="browse-view" class="view">
+        <div class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">Leave a lasting mark</p>
+            <h1>Find a bench to adopt.</h1>
+            <p>Support Van Cortlandt Park and dedicate a place to rest, reflect, and connect.</p>
+          </div>
+          <div class="hero-stats" aria-label="Program summary" id="program-stats"></div>
+        </div>
+
+        <section class="browse-section" aria-labelledby="browse-heading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Bench directory</p>
+              <h2 id="browse-heading">Choose your spot</h2>
+            </div>
+            <p id="result-count" class="result-count" aria-live="polite"></p>
+          </div>
+          <form id="filters" class="filters" role="search">
+            <label class="search-field">
+              <span class="sr-only">Search benches</span>
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m21 21-4.3-4.3m2.3-5.2a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg>
+              <input id="search" type="search" placeholder="Search by bench number or area" autocomplete="off" />
+            </label>
+            <label>
+              <span class="sr-only">Filter by area</span>
+              <select id="area-filter"><option value="all">All park areas</option></select>
+            </label>
+            <label>
+              <span class="sr-only">Filter by adoption status</span>
+              <select id="status-filter">
+                <option value="all">All statuses</option>
+                <option value="available">Available</option>
+                <option value="adopted">Adopted</option>
+                <option value="pending">Pending</option>
+              </select>
+            </label>
+            <button class="button secondary filters-reset" type="reset">Clear</button>
+          </form>
+
+          <div id="bench-grid" class="bench-grid"></div>
+          <div id="empty-state" class="empty-state" hidden>
+            <div aria-hidden="true">⌕</div>
+            <h3>No benches found</h3>
+            <p>Try removing a filter or searching for another area.</p>
+            <button class="button secondary" data-action="clear-filters">Clear filters</button>
+          </div>
+          <nav id="pagination" class="pagination" aria-label="Bench directory pages"></nav>
+        </section>
+      </section>
+
+      <section id="admin-view" class="view admin-view" hidden>
+        <div class="admin-header">
+          <div><p class="eyebrow">Staff workspace</p><h1>Adoption management</h1><p>Review requests and maintain the shared park directory.</p><p id="source-summary" class="source-summary"></p></div>
+          <button id="reset-demo" class="button danger secondary">Reset demo data</button>
+        </div>
+        <div id="admin-stats" class="admin-stats"></div>
+        <section class="admin-panel import-panel" aria-labelledby="import-heading">
+          <div><p class="eyebrow">Inventory source</p><h2 id="import-heading">Import real bench data</h2><p>Upload the park’s CSV inventory to replace the directory. This also clears existing requests so records cannot point to removed benches.</p></div>
+          <form id="import-form">
+            <label class="form-field"><span>Bench inventory CSV</span><input id="inventory-file" type="file" accept=".csv,text/csv" required /></label>
+            <div class="import-actions"><button id="download-template" class="button secondary" type="button">Download template</button><button class="button" type="submit">Import inventory</button></div>
+          </form>
+        </section>
+        <section class="admin-panel" aria-labelledby="requests-heading">
+          <div class="section-heading"><div><p class="eyebrow">Needs attention</p><h2 id="requests-heading">Pending requests</h2></div></div>
+          <div id="request-list" class="request-list"></div>
+        </section>
+        <section class="admin-panel" aria-labelledby="records-heading">
+          <div class="section-heading"><div><p class="eyebrow">Source of truth</p><h2 id="records-heading">Bench records</h2></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Bench</th><th>Area</th><th>Status</th><th>Public dedication</th><th>Term</th></tr></thead><tbody id="records-body"></tbody></table></div>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="bench-dialog" class="dialog"><div id="bench-dialog-content"></div></dialog>
+    <dialog id="adoption-dialog" class="dialog"><div id="adoption-dialog-content"></div></dialog>
+    <dialog id="confirm-dialog" class="dialog confirm-dialog">
+      <form method="dialog" class="dialog-card">
+        <div class="dialog-header"><div><p class="eyebrow">Please confirm</p><h2>Reset all demo data?</h2></div><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+        <p>This removes submitted requests and restores the original bench records. It cannot be undone.</p>
+        <div class="form-actions"><button class="button secondary" value="cancel">Cancel</button><button id="confirm-reset" class="button danger" value="confirm">Reset data</button></div>
+      </form>
+    </dialog>
+    <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
